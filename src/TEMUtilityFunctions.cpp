@@ -326,12 +326,12 @@ namespace temutil {
   void nc(int status) {
     handle_error(status);
   }
-  
-  
-  /** rough draft for reading a timeseries for a single location from a 
+
+  /** rough draft for reading a timeseries for a single location from a
   *   new-style input file
   */
-  std::vector<float> get_timeseries(const std::string &filename,
+  template <typename DTYPE>
+  std::vector<DTYPE> get_timeseries(const std::string &filename,
                                     const std::string &var,
                                     const int y, const int x) {
 
@@ -351,7 +351,7 @@ namespace temutil {
     temutil::nc( nc_inq_varid(ncid, var.c_str(), &timeseries_var) );
 
     BOOST_LOG_SEV(glg, debug) << "Allocate a vector with enough space for the whole timeseries (" << timeD_len << " timesteps)";
-    std::vector<float> data(timeD_len);
+    std::vector<DTYPE> data(timeD_len);
 
     BOOST_LOG_SEV(glg, note) << "Getting value for pixel(y,x): ("<< y <<","<< x <<").";
     int yD, xD;
@@ -375,11 +375,14 @@ namespace temutil {
     count[1] = 1;             // one location
     count[2] = 1;             // one location
 
+    // might need to add a call to nc_inq_var so we can find the type and call
+    // the right nc_get_var_type(...) function..
+
     BOOST_LOG_SEV(glg, debug) << "Grab the data from the netCDF file...";
     temutil::nc( nc_get_vara_float(ncid, timeseries_var, start, count, &data[0]) );
 
     return data;
-    
+
   }
 
   /** rough draft for reading a timeseries of co2 data from a new-style co2 file.
@@ -417,8 +420,6 @@ namespace temutil {
     return data;
   }
 
-
-  
   /** rough draft - look up lon/lat in nc file from y,x coordinates. 
       Assumes that the file has some coordinate dimensions...
   */
@@ -724,5 +725,11 @@ namespace temutil {
   template void pfll2data_pft(std::list<std::string> &l, double *data);
   template void pfll2data_pft(std::list<std::string> &l, float *data);
 
+  // inorder to keep the template function definition out of the header
+  // we have to explicitly instantiate it here...
+  template std::vector<int> get_timeseries<int>(const std::string &filename,
+      const std::string &var, const int y, const int x);
+  template std::vector<float> get_timeseries<float>(const std::string &filename,
+      const std::string &var, const int y, const int x);
 
 }
