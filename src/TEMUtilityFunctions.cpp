@@ -350,9 +350,6 @@ namespace temutil {
     int timeseries_var;
     temutil::nc( nc_inq_varid(ncid, var.c_str(), &timeseries_var) );
 
-    BOOST_LOG_SEV(glg, debug) << "Allocate a vector with enough space for the whole timeseries (" << timeD_len << " timesteps)";
-    std::vector<DTYPE> data(timeD_len);
-
     BOOST_LOG_SEV(glg, note) << "Getting value for pixel(y,x): ("<< y <<","<< x <<").";
     int yD, xD;
     size_t yD_len, xD_len;
@@ -377,12 +374,32 @@ namespace temutil {
 
     // might need to add a call to nc_inq_var so we can find the type and call
     // the right nc_get_var_type(...) function..
+    char vname[NC_MAX_NAME+1];
+    nc_type the_type;
+    int num_dims;
+    int dim_ids[NC_MAX_VAR_DIMS];
+    int num_atts;
+    temutil::nc( nc_inq_var(ncid, timeseries_var, vname, &the_type, &num_dims, dim_ids, &num_atts) );
+
+    std::vector<DTYPE> data2;
 
     BOOST_LOG_SEV(glg, debug) << "Grab the data from the netCDF file...";
-    temutil::nc( nc_get_vara_float(ncid, timeseries_var, start, count, &data[0]) );
+    if (the_type == NC_INT64) {
+      int dataI[timeD_len];
+      temutil::nc( nc_get_vara_int(ncid, timeseries_var, start, count, &dataI[0]) );
+      unsigned dataArraySize = sizeof(dataI) / sizeof(DTYPE);
+      data2.insert(data2.end(), &dataI[0], &dataI[dataArraySize]);
+    }
+    if (the_type == NC_FLOAT) {
+      float dataF[timeD_len];
+      temutil::nc( nc_get_vara_float(ncid, timeseries_var, start, count, &dataF[0]) );
+      unsigned dataArraySize = sizeof(dataF) / sizeof(DTYPE);
+      data2.insert(data2.end(), &dataF[0], &dataF[dataArraySize]);
 
-    return data;
-
+    } else {
+      BOOST_LOG_SEV(glg, err) << "Unknown datatype: '" << the_type << "'. Returning empty vector.";
+    }
+    return data2;
   }
 
   /** rough draft for reading a timeseries of co2 data from a new-style co2 file.
