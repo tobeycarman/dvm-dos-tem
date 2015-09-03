@@ -206,7 +206,9 @@ namespace temutil {
       s += boost::lexical_cast<std::string>(*it);
       s += ", ";
     }
-    s.erase(s.size()-2);
+    if (s.size() >= 2) {   // clear the trailing comma, space
+      s.erase(s.size()-2);
+    }
     return s;
   }
 
