@@ -695,11 +695,19 @@ void Cohort::updateMonthly_Fir(const int & year, const int & midx) {
     BOOST_LOG_SEV(glg, debug) << "Derive fire severity...";
     int fire_severity = fire.derive_fire_severity(cd.drainage_type, 3, /* FIX THIS --> */ 1);
 
+
+    BOOST_LOG_SEV(glg, debug) << "Right before fire.burn(..)  " << ground.layer_report_string();
+
+
     // fire, update C/N pools for each pft through 'bd', but not soil structure
     // soil root fraction also updated through 'cd'
     BOOST_LOG_SEV(glg, debug) << "BURN!";
     fire.burn(fire_severity);
+    
+    BOOST_LOG_SEV(glg, debug) << "Right after fire.burn(..)  " << ground.layer_report_string();
 
+
+    
     BOOST_LOG_SEV(glg, debug) << "Collect burned veg C/N from individual pfts into bdall...";
     for (int ip=0; ip<NUM_PFT; ip++) {
       if (cd.m_veg.vegcov[ip]>0.) {
@@ -718,6 +726,7 @@ void Cohort::updateMonthly_Fir(const int & year, const int & midx) {
 
     BOOST_LOG_SEV(glg, debug) << "Post-burn, assign the updated C/N pools to double linked layer matrix in ground...";
     soilbgc.assignCarbonBd2LayerMonthly();
+    BOOST_LOG_SEV(glg, debug) << "Right after assignCarbonBd2LayerMonthly(..)  " << ground.layer_report_string();
 
     BOOST_LOG_SEV(glg, debug) << "Post-burn, adjust soil structure...";
     ground.adjustSoilAfterburn(); // must call after soilbgc.assignCarbonBd2LayerMonthly()

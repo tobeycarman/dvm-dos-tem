@@ -24,6 +24,7 @@
 #include "../TEMLogger.h"
 extern src::severity_logger< severity_level > glg;
 
+/** Returns a tag string or empty string depending on the boolean, 'val'. */
 std::string soildesc2tag(const bool val, std::string tag) {
   if (val) {
     std::stringstream ss;
@@ -80,7 +81,7 @@ Ground::~Ground() {
   "last" pointers are for soil, fronts, moss, etc.
   \li \c '<-' in the left half of a column is for the "first" pointer
   \li \c '<-' in the right half of a column is for the "last" pointer
-  \li \c ' x' indicated the pointer/member is not set.
+  \li \c ' x' indicates the pointer/member is not set.
 
   The final set of columns contains the "description" tags for each layer.
 
@@ -1041,10 +1042,12 @@ void Ground::retrieveSnowDimension(snwstate_dim * snowdim) {
 // to originate from neibouring layer, otherwise mathematic error will occur
 // execept for create new moss/fibrous organic layer from none.
 void  Ground::redivideSoilLayers() {
+  BOOST_LOG_SEV(glg, debug) << "Beginning of redivideSoilLayers(..)" << this->layer_report_string();
   redivideMossLayers(moss.type);
   redivideShlwLayers();
   redivideDeepLayers();
   checkWaterValidity();
+  BOOST_LOG_SEV(glg, debug) << "End of redivideSoilLayers(..)" << this->layer_report_string();
 };
 
 //
@@ -1110,6 +1113,9 @@ void  Ground::redivideMossLayers(const int &mosstype) {
 };
 
 void Ground::redivideShlwLayers() {
+
+  BOOST_LOG_SEV(glg, debug) << "At the top of redivideShlwLayers(..)  " << this->layer_report_string();
+
   organic.shlwchanged = false;
 
   ////////// IF there exists 'shlw' layer(s) ////////////////
@@ -1514,6 +1520,9 @@ void Ground::combineTwoSoilLayersL2U(SoilLayer* lsl, SoilLayer* usl) {
 // So, it must be called after 'bd' layerd C content was assigned to the
 //   orginal double-linked layer matrix
 double Ground::adjustSoilAfterburn() {
+  BOOST_LOG_SEV(glg, debug) << "Beginning of adjustSoilAfterburn(..)" << this->layer_report_string();
+
+
   double bdepthadj = 0.; //this is used to check if thickness change here would
                          //  be modifying burn thickness in 'WildFire.cpp'
   // and 'frontz'
@@ -1613,15 +1622,21 @@ double Ground::adjustSoilAfterburn() {
     currl =currl->nextl;
   }
 
+  BOOST_LOG_SEV(glg, debug) << "Right before resortGroundLayers(..)" << this->layer_report_string();
   resortGroundLayers();
+
+  BOOST_LOG_SEV(glg, debug) << "Right before updateSoilHorizons(..)" << this->layer_report_string();
   updateSoilHorizons();
   //finally, checking if further needed to divide/combine double-linked layer
   //  matrix, in case that some layers may be getting too thick or too thin due
   //  to layer adjustion above. Then, re-do layer division or combination is
   //  necessary for better thermal/hydrological simulation
+  BOOST_LOG_SEV(glg, debug) << "Right before redivideSoilLayers(..)" << this->layer_report_string();
   redivideSoilLayers();
   // for checking the adjusted burned thickness
   return bdepthadj;
+  BOOST_LOG_SEV(glg, debug) << "End of adjustSoilAfterburn(..)" << this->layer_report_string();
+
 };
 
 //if OS thickness changes, the following needs to be called
