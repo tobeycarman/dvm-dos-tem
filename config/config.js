@@ -8,7 +8,7 @@
     "hist_climate_file":  "DATA/Toolik_10x10_30yrs/historic-climate.nc",
     "proj_climate_file":  "DATA/Toolik_10x10_30yrs/projected-climate.nc",
     "veg_class_file":     "DATA/Toolik_10x10_30yrs/vegetation.nc",
-    "fire_file":          "DATA/Toolik_10x10_30yrs/historic-fire.nc",
+    "fire_file":          "DATA/Toolik_10x10_30yrs/fire.nc",
     "drainage_file":      "DATA/Toolik_10x10_30yrs/drainage.nc",
     "co2_file":           "DATA/Toolik_10x10_30yrs/co2.nc",
     "runmask_file":       "DATA/Toolik_10x10_30yrs/run-mask.nc",

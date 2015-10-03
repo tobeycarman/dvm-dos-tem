@@ -105,6 +105,12 @@ namespace temutil {
   
   void nc(int status);
   
+  /** rough draft for reading a scalar variable for a single location. */
+  template <typename DTYPE>
+  DTYPE get_scalar(const std::string &filename,
+                   const std::string &var,
+                   const int y, const int x);
+
   /** rough draft for reading a timeseries for a single location from a
   *   new-style input file
   */

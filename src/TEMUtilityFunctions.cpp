@@ -327,6 +327,69 @@ namespace temutil {
     handle_error(status);
   }
 
+  template <typename DTYPE>
+  DTYPE get_scalar(const std::string &filename,
+                   const std::string &var,
+                   const int y, const int x) {
+
+    BOOST_LOG_SEV(glg, debug) << "Opening dataset: " << filename;
+    BOOST_LOG_SEV(glg, debug) << "Getting variable: " << var;
+
+    int ncid;
+    temutil::nc( nc_open(filename.c_str(), NC_NOWRITE, &ncid) );
+
+
+    int scalar_var;
+    temutil::nc( nc_inq_varid(ncid, var.c_str(), &scalar_var) );
+
+    BOOST_LOG_SEV(glg, note) << "Getting value for pixel(y,x): ("<< y <<","<< x <<").";
+    int yD, xD;
+    size_t yD_len, xD_len;
+
+    temutil::nc( nc_inq_dimid(ncid, "Y", &yD) );
+    temutil::nc( nc_inq_dimlen(ncid, yD, &yD_len) );
+
+    temutil::nc( nc_inq_dimid(ncid, "X", &xD) );
+    temutil::nc( nc_inq_dimlen(ncid, xD, &xD_len) );
+
+    // specify start indices for each dimension (y, x)
+    size_t start[2];
+    start[0] = y;     // specified location
+    start[1] = x;     // specified location
+
+    // specify counts for each dimension
+    size_t count[2];
+    count[0] = 1;             // one location
+    count[1] = 1;             // one location
+
+    // might need to add a call to nc_inq_var so we can find the type and call
+    // the right nc_get_var_type(...) function..
+    char vname[NC_MAX_NAME+1];
+    nc_type the_type;
+    int num_dims;
+    int dim_ids[NC_MAX_VAR_DIMS];
+    int num_atts;
+    temutil::nc( nc_inq_var(ncid, scalar_var, vname, &the_type, &num_dims, dim_ids, &num_atts) );
+
+    DTYPE data2;
+
+    if (the_type == NC_INT64) {
+      int data3;
+      temutil::nc( nc_get_vara_int(ncid, scalar_var, start, count, &data3) );
+      data2 = (DTYPE)data3;
+    }
+
+    if (the_type == NC_FLOAT) {
+      float data3;
+      temutil::nc( nc_get_vara_float(ncid, scalar_var, start, count, &data3) );
+      data2 = (DTYPE)data3;
+    } else {
+      BOOST_LOG_SEV(glg, err) << "Unknown datatype: '" << the_type << "'. Returning empty vector.";
+    }
+
+    return data2;
+  }
+
   /** rough draft for reading a timeseries for a single location from a
   *   new-style input file
   */
@@ -744,6 +807,12 @@ namespace temutil {
 
   // inorder to keep the template function definition out of the header
   // we have to explicitly instantiate it here...
+
+  template int get_scalar(const std::string &filename,
+      const std::string &var, const int y, const int x);
+  template float get_scalar(const std::string &filename,
+      const std::string &var, const int y, const int x);
+
   template std::vector<int> get_timeseries<int>(const std::string &filename,
       const std::string &var, const int y, const int x);
   template std::vector<float> get_timeseries<float>(const std::string &filename,
