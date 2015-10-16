@@ -88,7 +88,7 @@ void Runner::run_years(int start_year, int end_year, const std::string& stage) {
 
       BOOST_LOG_SEV(glg, debug) << "(Begining of month loop) " << cohort.ground.layer_report_string();
 
-      this->cohort.updateMonthly(iy, im, DINM[im]);
+      this->cohort.updateMonthly(iy, im, stage);
 
 
       // Monthly output control needs to be determined by a parameter

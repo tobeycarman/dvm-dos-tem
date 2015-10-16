@@ -22,6 +22,7 @@
 
 #include <boost/assign/list_of.hpp> // for 'list_of()'
 
+#include "../inc/timeconst.h"
 #include "../TEMLogger.h"
 #include "../TEMUtilityFunctions.h"
 
@@ -351,11 +352,12 @@ void Cohort::initialize_state_parameters() {
 //};
 
 void Cohort::updateMonthly(const int & yrcnt, const int & currmind,
-                           const int & dinmcurr) {
+                           const std::string& stage) {
 
-  BOOST_LOG_SEV(glg, debug) << "Cohort::updateMonthly. Year: "
-                            << yrcnt << " Month: " << currmind << " dinmcurr: "
-                            << dinmcurr;
+  BOOST_LOG_SEV(glg, debug) << "Cohort::updateMonthly."
+                            << " Year: " << yrcnt
+                            << " Month: " << currmind
+                            << " Stage: " << stage;
 
   //
   if(currmind==0) {
@@ -372,7 +374,7 @@ void Cohort::updateMonthly(const int & yrcnt, const int & currmind,
     // FIX: definitely a problem in here that is Making soil temperatures get ridiculously low -19 billion
   
     BOOST_LOG_SEV(glg, debug) << "Run the environmental module - updates water/thermal processes to get (bio)physical conditions.";
-    updateMonthly_Env(currmind, dinmcurr);
+    updateMonthly_Env(currmind);
     
     BOOST_LOG_SEV(glg, debug) << "RIGHT AFTER updateMonthlyEnv() yr:"<<yrcnt<<" m:"<<currmind<<" "<< ground.layer_report_string();
 
@@ -389,7 +391,7 @@ void Cohort::updateMonthly(const int & yrcnt, const int & currmind,
 
   if(md->get_dsbmodule()) {
     BOOST_LOG_SEV(glg, debug) << "Run the disturbance model.";
-    updateMonthly_Dsb(yrcnt, currmind);
+    updateMonthly_Dsb(yrcnt, currmind, stage);
   }
 
   BOOST_LOG_SEV(glg, debug) << "Clean up at the end of the month";
@@ -419,7 +421,7 @@ void Cohort::updateMonthly(const int & yrcnt, const int & currmind,
 /////////////////////////////////////////////////////////
 //Environment Module Calling at monthly time-step, but involving daily time-step loop
 /////////////////////////////////////////////////////////
-void Cohort::updateMonthly_Env(const int & currmind, const int & dinmcurr) {
+void Cohort::updateMonthly_Env(const int & currmind) {
   BOOST_LOG_NAMED_SCOPE("env")
   //Yuan: note that the Veg-Env module calling is for a few PFTs within ONE cohort
   //  1) ed calling is done for each PFTs within the module
@@ -473,7 +475,7 @@ void Cohort::updateMonthly_Env(const int & currmind, const int & dinmcurr) {
   // (iii) daily light/water processes at plant canopy
   double tdrv, daylength;
 
-  for(int id = 0; id < dinmcurr; id++) {
+  for(int id = 0; id < DINM[currmind]; id++) {
 
     int doy = temutil::day_of_year(currmind, id);
     daylength = temutil::length_of_day(this->lat, doy);
@@ -572,17 +574,17 @@ void Cohort::updateMonthly_Env(const int & currmind, const int & dinmcurr) {
     //  at yearly timestep in ::updateMonthly_DIMgrd)
     ground.retrieveSnowDimension(&cd.d_snow);
 
-    cd.endOfDay(dinmcurr); //this must be done first, because it's needed below
+    cd.endOfDay(DINM[currmind]); //this must be done first, because it's needed below
 
     //accumulate daily vars into monthly for 'ed' of each PFT
     for (int ip=0; ip<NUM_PFT; ip++) {
       if (cd.d_veg.vegcov[ip] > 0.0) {
-        ed[ip].atm_endOfDay(dinmcurr);
-        ed[ip].veg_endOfDay(dinmcurr);
-        ed[ip].grnd_endOfDay(dinmcurr, doy);
+        ed[ip].atm_endOfDay(DINM[currmind]);
+        ed[ip].veg_endOfDay(DINM[currmind]);
+        ed[ip].grnd_endOfDay(DINM[currmind], doy);
 
         // accumulate yearly vars at the last day of a month
-        if(id==dinmcurr-1) {
+        if(id==DINM[currmind]-1) {
           ed[ip].atm_endOfMonth();
           ed[ip].veg_endOfMonth(currmind);
           ed[ip].grnd_endOfMonth();
@@ -591,12 +593,12 @@ void Cohort::updateMonthly_Env(const int & currmind, const int & dinmcurr) {
     }
 
     //accumulate daily vars into monthly for 'ed' of all pfts
-    edall->atm_endOfDay(dinmcurr);
-    edall->veg_endOfDay(dinmcurr); //be sure 'getEd4allpfts_daily' called above
-    edall->grnd_endOfDay(dinmcurr, doy);
+    edall->atm_endOfDay(DINM[currmind]);
+    edall->veg_endOfDay(DINM[currmind]); //be sure 'getEd4allpfts_daily' called above
+    edall->grnd_endOfDay(DINM[currmind], doy);
 
     // accumulate yearly vars at the last day of a month for all pfts
-    if(id==dinmcurr-1) {
+    if(id==DINM[currmind]-1) {
       edall->atm_endOfMonth();
       edall->veg_endOfMonth(currmind);
       edall->grnd_endOfMonth();
@@ -672,10 +674,10 @@ void Cohort::updateMonthly_Bgc(const int & currmind) {
   assignSoilBd2pfts_monthly();
 };
 
-void Cohort::updateMonthly_Dsb(const int & yrind, const int & currmind) {
+void Cohort::updateMonthly_Dsb(const int & yrind, const int & currmind, const std::string& stage) {
   BOOST_LOG_NAMED_SCOPE("dsb");
 
-  updateMonthly_Fir(yrind, currmind);
+  updateMonthly_Fir(yrind, currmind, stage);
 
   //updateMonthly_Flood(...)
 }
