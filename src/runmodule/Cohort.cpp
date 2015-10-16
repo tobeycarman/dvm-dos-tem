@@ -351,7 +351,8 @@ void Cohort::initialize_state_parameters() {
 //  }
 //};
 
-void Cohort::updateMonthly(const int & yrcnt, const int & currmind,
+void Cohort::updateMonthly(const int yrcnt,
+                           const int currmind,
                            const std::string& stage) {
 
   BOOST_LOG_SEV(glg, debug) << "Cohort::updateMonthly."

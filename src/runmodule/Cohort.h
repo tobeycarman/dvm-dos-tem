@@ -38,9 +38,9 @@ public :
   Cohort(int y, int x, ModelData* modeldatapointer);
   ~Cohort();
 
-  // model running status
-  int errorid;
-  bool failed;    // when an exception is caught, set failed to be true
+  ///< A lookup object that serves as a bridge between parameters stored in files
+  ///< and setting the parameter values inside the model's run time.
+  CohortLookup chtlu;
 
   /*
     Note: FRI is a member of CohortData because it is checked in
@@ -48,6 +48,7 @@ public :
     the members/fields of a Cohort...
   */
 
+  
   /** @name Location / Spatial Reference */
   ///@{
   int y;       ///< pixel coordinate, (row)
@@ -55,66 +56,79 @@ public :
   float lon;   ///< degrees W
   float lat;   ///< degres N
   ///@}
-  // old? can I deprecate these??
+
+
+  /** @name Deprecated? */
+  ///@{
+  int errorid;    ///< model running status
+  bool failed;    ///< when an exception is caught, set failed to be true
+  OutRetrive outbuffer; ///< output...
+
   //double pfsize[NUM_FSIZE];
   //double pfseason[NUM_FSEASON];
-  
-  //inputs
-  CohortLookup chtlu;
 
-  // domain
+  ///@}
+
+  /** @name Domain 
+   * Not sure why these objects/structs are grouped separately from the
+   * obects in the Data section below??
+  */
+  ///@{
   Vegetation veg;
   Ground ground;
-  
-  // new domain
   Climate climate;
+  ///@}
 
-  // processes
+  /** @name Processes
+   * Need a better description here...
+  */
+  ///@{
   Vegetation_Env vegenv[NUM_PFT];
+  Vegetation_Bgc vegbgc[NUM_PFT];
   Snow_Env snowenv;
   Soil_Env soilenv;
   SoilParent_Env solprntenv;
-
-  Vegetation_Bgc vegbgc[NUM_PFT];
   Soil_Bgc soilbgc;
-
   WildFire fire;
+  ///@}
 
-  // output
-  OutRetrive outbuffer;
 
-  // data
-  EnvData ed[NUM_PFT];
-  BgcData bd[NUM_PFT];
-  EnvData * edall;
-  BgcData * bdall;
+  /** @name Data
+   *  Each of these objects contains structs with state, diagnostic, and flux
+   *  values. Each object also has methods assorted methods for clearing data
+   *  at the begining and end of each year and some mechanisms for summing and
+   *  or averaging the state, diagnostic and flux values.
+  */
+  ///@{
+  EnvData ed[NUM_PFT];   ///< explicitly for PFTs
+  BgcData bd[NUM_PFT];   ///< explicitly for PFTs
+  EnvData * edall;       ///< summed across PFTs?
+  BgcData * bdall;       ///< summed across PFTs?
+  FirData * fd;
 
-  FirData * fd;   // this for all PFTs and their soil
+  // may need a new grouping for these?
+  CohortData cd;           ///< ? different..??
+  ModelData * md;          ///< ? should be called Config
+  RestartData restartdata; ///< ? the model state for saving/restarting
+  ///@}
 
-  ModelData * md;
-
-  CohortData cd;
-  RestartData restartdata;
-  
-
-//  void NEW_load_climate_from_file(int y, int x);
-//  void NEW_load_veg_class_from_file(int y, int x);
-//  void NEW_load_fire_from_file(int y, int x);
-
+  /** @name Setup functions. */
+  ///@{
   void initialize_internal_pointers();
 
   void setModelData(ModelData* md);
   void setProcessData(EnvData * alledp, BgcData * allbdp, FirData *fdp);
 
   void initialize_state_parameters();
-  //void prepareAllDrivingData();
-  //void prepareDayDrivingData(const int & yrcnt, const int &usedatmyr);
-  void updateMonthly(const int & yrcnt, const int & currmind,
-                     const std::string& stage);
+  ///@}
+
+  /** @name Driving functions. */
+  ///@{
+  void updateMonthly(const int yrcnt, const int currmind, const std::string& stage);
   
   void set_state_from_restartdata();
   void set_restartdata_from_state();
-
+  ///@}
 
 private:
 
@@ -138,14 +152,15 @@ private:
                                  const double csumrootfrac[MAX_ROT_LAY],
                                  const double dzrotlay[MAX_ROT_LAY]);
 
-  //
+  // distribute values amongst PFTs...???
   void assignAtmEd2pfts_daily();
   void assignGroundEd2pfts_daily();
+  void assignSoilBd2pfts_monthly();
+
+  // aggregate values from all PFTs...???
   void getSoilTransfactor4all_daily();
   void getEd4allveg_daily();
   void getEd4land_daily();
-
-  void assignSoilBd2pfts_monthly();
   void getBd4allveg_monthly();
 
 };
