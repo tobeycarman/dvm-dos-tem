@@ -401,15 +401,31 @@ namespace temutil {
     int num_atts;
     temutil::nc( nc_inq_var(ncid, scalar_var, vname, &the_type, &num_dims, dim_ids, &num_atts) );
 
+    // from netcdf.h
+    //  NC_NAT          0   
+    //  NC_BYTE         1   
+    //  NC_CHAR         2
+    //  NC_SHORT        3
+    //  NC_INT          4   
+    //  NC_LONG         NC_INT  
+    //  NC_FLOAT        5
+    //  NC_DOUBLE       6
+    //  NC_UBYTE        7
+    //  NC_USHORT       8
+    //  NC_UINT         9
+    //  NC_INT64       10
+    //  NC_UINT64      11
+    //  NC_STRING      12
+
     DTYPE data2;
 
-    if (the_type == NC_INT64) {
+    if (the_type == NC_INT64 || the_type == NC_INT) {
+      BOOST_LOG_SEV(glg, debug) << "--> NC_INT64 or NC_INT";
       int data3;
       temutil::nc( nc_get_vara_int(ncid, scalar_var, start, count, &data3) );
       data2 = (DTYPE)data3;
-    }
-
-    if (the_type == NC_FLOAT) {
+    } else if (the_type == NC_FLOAT) {
+      BOOST_LOG_SEV(glg, debug) << "--> NC_FLOAT";
       float data3;
       temutil::nc( nc_get_vara_float(ncid, scalar_var, start, count, &data3) );
       data2 = (DTYPE)data3;
@@ -477,13 +493,12 @@ namespace temutil {
     std::vector<DTYPE> data2;
 
     BOOST_LOG_SEV(glg, debug) << "Grab the data from the netCDF file...";
-    if (the_type == NC_INT64) {
+    if (the_type == NC_INT64 || NC_INT) {
       int dataI[timeD_len];
       temutil::nc( nc_get_vara_int(ncid, timeseries_var, start, count, &dataI[0]) );
       unsigned dataArraySize = sizeof(dataI) / sizeof(DTYPE);
       data2.insert(data2.end(), &dataI[0], &dataI[dataArraySize]);
-    }
-    if (the_type == NC_FLOAT) {
+    } else if (the_type == NC_FLOAT) {
       float dataF[timeD_len];
       temutil::nc( nc_get_vara_float(ncid, timeseries_var, start, count, &dataF[0]) );
       unsigned dataArraySize = sizeof(dataF) / sizeof(DTYPE);
