@@ -684,7 +684,7 @@ void Cohort::updateMonthly_Dsb(const int & yrind, const int & currmind, const st
 }
 
 /** Fire Disturbance module. */
-void Cohort::updateMonthly_Fir(const int & year, const int & midx) {
+void Cohort::updateMonthly_Fir(const int & year, const int & midx, const std::string& stage) {
   BOOST_LOG_NAMED_SCOPE("fire")
 
   // FIX ?? not sure this may no longer be necessary??
