@@ -529,88 +529,8 @@ namespace temutil {
     return std::pair<float, float>(lat_value, lon_value);
   }
 
-  /** rough draft for reading a fri for a single location */
-  int get_fri(const std::string &filename, int y, int x) {
-    BOOST_LOG_SEV(glg, debug) << "Opening dataset: " << filename;
-    int ncid;
-    temutil::nc( nc_open(filename.c_str(), NC_NOWRITE, &ncid ) );
-
-    int yD, xD;
-    temutil::nc( nc_inq_dimid(ncid, "Y", &yD) );
-    temutil::nc( nc_inq_dimid(ncid, "X", &xD) );
-
-    int friV;
-    temutil::nc( nc_inq_varid(ncid, "fri", &friV));
-
-    size_t start[2];
-    start[0] = y;
-    start[1] = x;
-
-    int fri_value;
-    temutil::nc( nc_get_var1_int(ncid, friV, start, &fri_value)  );
-
-    return fri_value;
-
-  }
-
-  /** rough draft for reading a single location's, list of 'fire years' 
-    (explicit replacement for FRI) */
-  std::vector<int> get_fire_years(const std::string &filename, int y, int x) {
-  // FIX: implement this!
-/*
-    BOOST_LOG_SEV(glg, debug) << "Opening dataset: " << filename;
-    int ncid;
-    temutil::nc( nc_open(filename.c_str(), NC_NOWRITE, &ncid ) );
-
-    int yD, xD;
-    temutil::nc( nc_inq_dimid(ncid, "Y", &yD) );
-    temutil::nc( nc_inq_dimid(ncid, "X", &xD) );
-  
-  
-    int fyV;
-    temutil::nc( nc_inq_varid, "fire_years", fyV);
-
-       int nc_get_vara       (int ncid, int varid, const size_t start[],
-                            const size_t count[], void *ip);
-    size_t start[2];
-    start[0] = y;
-    start[1] = x;
-    nc_get_vara(ncid, fyV, start, &)
-    
-    nc_vlen_t fyrs[?];
-    nc_vlen_t fszs[?];
-
-    
-//ncid
-//The ncid of the file that contains the VLEN type.
-//xtype
-//The type of the VLEN to inquire about. 
-//name
-//A pointer for storage for the types name. The name will be NC_MAX_NAME characters or less. 
-//datum_sizep
-//A pointer to a size_t, this will get the size of one element of this vlen. 
-//base_nc_typep
-//A pointer to an nc_type, this will get the type of the VLEN base type. (In other words, what type is this a VLEN of?)
-
-    temutil::nc( nc_inq_vlen(ncid, NC_INT, "fire_years", ??,??))
-  
-  
-    if (nc_inq_vlen(ncid, typeid, name_in, &size_in, &base_nc_type_in)) ERR;
-    
-    std::vector<int> fy = ??
-*/
-  }
-
-  /** rough draft for reading a single location's list of 'fire sizes'. 
-      This should parallel fire_years. In otherwords for every year mentioned
-      in fire-years, there must be a corresponding fire size?
-      Does this imply that the fire_years must be sorted?
-  */
-  std::vector<int> get_fire_sizes(const std::string &filename, int y, int x){
-    // FIX: implement this!
-  }
-
   /** rough draft for reading a single location, veg classification
+   - should replace with using the get_scalar(..) function...
   */
   int get_veg_class(const std::string &filename, int y, int x) {
 
@@ -641,7 +561,9 @@ namespace temutil {
     return veg_class_value;
   }
 
-  /** Looks up a pixel's drainage class from a netcdf file */
+  /** Looks up a pixel's drainage class from a netcdf file 
+     - should replace with using the get_scalar(..) function...
+  */
   int get_drainage_class(const std::string& filename, int y, int x) {
 
     BOOST_LOG_SEV(glg, debug) << "Opening dataset: " << filename;
