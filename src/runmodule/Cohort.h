@@ -37,12 +37,6 @@ public :
   Cohort();
   Cohort(int y, int x, ModelData* modeldatapointer);
   ~Cohort();
-  
-  int y;
-  int x;
-
-  float lon;
-  float lat;
 
   // model running status
   int errorid;
@@ -54,6 +48,13 @@ public :
     the members/fields of a Cohort...
   */
 
+  /** @name Location / Spatial Reference */
+  ///@{
+  int y;       ///< pixel coordinate, (row)
+  int x;       ///< pixel coordinate, (col)
+  float lon;   ///< degrees W
+  float lat;   ///< degres N
+  ///@}
   // old? can I deprecate these??
   //double pfsize[NUM_FSIZE];
   //double pfseason[NUM_FSEASON];
