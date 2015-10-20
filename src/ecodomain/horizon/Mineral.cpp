@@ -1,7 +1,7 @@
 #include "Mineral.h"
 
 Mineral::Mineral() {
-  setDefaultThick(0.);
+  setDefaultThick(0.0);
 };
 
 Mineral::~Mineral() {
@@ -19,7 +19,7 @@ void Mineral::setDefaultThick(const double & thickness) {
   }
 
   // if total thickness input, needs update the actual bottom layer's thickness
-  if (thickness > 0.) {
+  if (thickness > 0.0) {
     thick = 0.0;
     num = 0;
 
