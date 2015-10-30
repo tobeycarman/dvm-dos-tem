@@ -574,67 +574,6 @@ namespace temutil {
     return std::pair<float, float>(lat_value, lon_value);
   }
 
-  /** rough draft for reading a single location, veg classification
-   - should replace with using the get_scalar(..) function...
-  */
-  int get_veg_class(const std::string &filename, int y, int x) {
-
-    BOOST_LOG_SEV(glg, debug) << "Opening dataset: " << filename;
-    int ncid;
-    temutil::nc( nc_open(filename.c_str(), NC_NOWRITE, &ncid ) );
-
-    int xD, yD;
-
-    //size_t yD_len, xD_len;
-
-    temutil::nc( nc_inq_dimid(ncid, "Y", &yD) );
-    //temutil::nc( nc_inq_dimlen(ncid, yD, &yD_len) );
-
-    temutil::nc( nc_inq_dimid(ncid, "X", &xD) );
-    //temutil::nc( nc_inq_dimlen(ncid, xD, &xD_len) );
-
-    int veg_classificationV;
-    temutil::nc( nc_inq_varid(ncid, "veg_class", &veg_classificationV) );
-
-    size_t start[2];
-    start[0] = y;
-    start[1] = x;
-
-    int veg_class_value;
-    temutil::nc( nc_get_var1_int(ncid, veg_classificationV, start, &veg_class_value)  );
-
-    return veg_class_value;
-  }
-
-  /** Looks up a pixel's drainage class from a netcdf file 
-     - should replace with using the get_scalar(..) function...
-  */
-  int get_drainage_class(const std::string& filename, int y, int x) {
-
-    BOOST_LOG_SEV(glg, debug) << "Opening dataset: " << filename;
-
-    int ncid;
-    temutil::nc( nc_open(filename.c_str(), NC_NOWRITE, &ncid ) );
-
-    int xD, yD;
-
-    temutil::nc( nc_inq_dimid(ncid, "Y", &yD) );
-    temutil::nc( nc_inq_dimid(ncid, "X", &xD) );
-
-    int drainage_classV;
-    temutil::nc( nc_inq_varid(ncid, "drainage_class", &drainage_classV) );
-
-    size_t start[2];
-    start[0] = y;
-    start[1] = x;
-
-    int drainage_class_value;
-    temutil::nc( nc_get_var1_int(ncid, drainage_classV, start, &drainage_class_value)  );
-
-    return drainage_class_value;
-  }
-
-
   /** Parses a string, looking for a community code.
    Reads the string, finds the first occurrence of the characters "CMT", and
    returns a string consisting of CMT and the following two characters.
