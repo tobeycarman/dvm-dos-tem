@@ -284,7 +284,7 @@ int main(int argc, char* argv[]){
               runner.cohort.md->set_dslmodule(false);
               runner.cohort.md->set_nfeed(false);
  
-              // FIX: what about baseline? avln? friderived?
+              // FIX: what about baseline? avln?
               // FIX: same behavior in calibration and extrapolation modes???
 
               //  changing climate?: NO - use avgX values

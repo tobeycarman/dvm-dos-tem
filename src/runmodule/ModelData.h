@@ -71,10 +71,6 @@ public:
   void set_dsbmodule(const std::string &s);
   void set_dsbmodule(const bool v);
 
-  bool get_friderived();
-  void set_friderived(const std::string &s);
-  void set_friderived(const bool v);
-
   bool get_nfeed();
   void set_nfeed(const std::string &s);
   void set_nfeed(const bool v);
@@ -107,7 +103,6 @@ private:
 
   bool dslmodule;  // dynamic soil layer module on/off
   bool dsbmodule;  // disturbance module on/off
-  bool friderived; // option for switching Grid-level fire occurrence (upon FRI)
 
 };
 
