@@ -56,7 +56,6 @@ WildFire::WildFire(const std::string& fname, const int y, const int x){
   BOOST_LOG_SEV(glg, debug) << "fire area_of_burn:   [" << temutil::vec2csv(this->area_of_burn) << "]";
   BOOST_LOG_SEV(glg, debug) << "severity:            [" << temutil::vec2csv(this->severity) << "]";
 
-
   BOOST_LOG_SEV(glg, debug) << "Done making WildFire object.";
 
 }
