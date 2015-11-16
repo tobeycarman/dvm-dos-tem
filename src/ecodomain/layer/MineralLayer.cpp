@@ -56,6 +56,7 @@ void MineralLayer::updateProperty5Lookup() {
   tcdry = (0.135 * bulkden + 64.7) / (2700 - 0.947 * bulkden);
 
   //prtlden = 2700.0; // not present in dvmdostem??
+  // "particle density" 11-3-2015 APPEARS TO BE DEPRECATED...
 
   tcsatunf = pow(tcsolid , 1.0 - poro) * pow((double)TCLIQ, poro);
   tcsatfrz = pow(tcsolid , 1.0 - poro) * pow((double)TCICE, poro);

@@ -196,12 +196,25 @@ namespace temutil {
 
   }
   
+  /** Template function for converting a vector to a comma separated string
+  *  that can be printed. The string is surrounded by square brackets and
+  *  has commas and spaces between the elements for readability.
+  */
   template<typename T>
   std::string vec2csv(const std::vector<T>& vec) {
     std::string s;
     for (typename std::vector<T>::const_iterator it = vec.begin(); it != vec.end(); ++it) {
-      s += boost::lexical_cast<std::string>(*it);
+
+      // Simpler, but requires boost and offers minimal formatting control
+      //s += boost::lexical_cast<std::string>(*it);
+
+      // Doesn't require boost, offers more formatting control
+      std::ostringstream ss;
+      ss << std::fixed << std::setprecision(2);
+      ss << *it;
+      s += ss.str();
       s += ", ";
+
     }
     if (s.size() >= 2) {   // clear the trailing comma, space
       s.erase(s.size()-2);

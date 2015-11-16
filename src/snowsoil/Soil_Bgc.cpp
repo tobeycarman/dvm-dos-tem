@@ -452,7 +452,7 @@ void Soil_Bgc::initMslayerCarbon(double & minec) {
       dbm += currl->dz;
       cumcarbon = ca/cb*(exp(cb*dbm*100)-1.0)*10000 + 0.0025*dbm*100*10000;
 
-      if(cumcarbon-prevcumcarbon>0.01 && dbm<=2.0) {  // somc will not exist more than 2 m intially
+      if(cumcarbon-prevcumcarbon > 0.01 && dbm <= 1.01) {  // somc will not exist more than 2 m intially
         currl->rawc  = bgcpar.eqrawc * (cumcarbon -prevcumcarbon);
         currl->soma  = bgcpar.eqsoma * (cumcarbon -prevcumcarbon);
         currl->sompr = bgcpar.eqsompr * (cumcarbon -prevcumcarbon);
@@ -465,7 +465,7 @@ void Soil_Bgc::initMslayerCarbon(double & minec) {
       }
 
       prevcumcarbon = cumcarbon;
-      totsomc += currl->rawc+currl->soma+currl->sompr+currl->somcr;
+      totsomc += currl->rawc + currl->soma + currl->sompr + currl->somcr;
     } else {
       break;
     }

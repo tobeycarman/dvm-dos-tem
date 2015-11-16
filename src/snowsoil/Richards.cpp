@@ -240,12 +240,12 @@ void Richards::iterate(const double trans[], const double & evap,
   //
   tschanged = true;
   itsum = 0;
-  tleft = 1.;    // at beginning of update, tleft is one timestep
+  tleft = 1.0;    // at beginning of update, tleft is one timestep
 
-  if(infil>0.) {
-    TSTEPORG =TSTEPMAX/20.;
+  if(infil > 0.0) {
+    TSTEPORG = TSTEPMAX / 20.0;
   } else {
-    TSTEPORG =TSTEPMAX;
+    TSTEPORG = TSTEPMAX;
   }
 
   tstep = TSTEPORG;

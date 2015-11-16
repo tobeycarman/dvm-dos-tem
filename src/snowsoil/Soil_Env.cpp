@@ -512,7 +512,7 @@ void Soil_Env::updateDailySM() {
     ed->d_soi2l.qover  = 0.;
   }
 
-  double infil = rnth+melt-ed->d_soi2l.qover;
+  double infil = rnth + melt - ed->d_soi2l.qover;
   ed->d_soi2l.qinfl = infil;
   // 2) Then soil water dynamics at daily time step
   double sinday= 86400.;
