@@ -121,10 +121,14 @@ std::string Ground::layer_report_string() {
   
   // build the header for the table
   report << "[" << std::right << setw(2) << "ix" << "] "
-         << std::right << setw(12) << std::setprecision(3) << "dz" << " "
-         << std::right << setw(12) << std::setprecision(3) << "z" << " "
-         << std::right << setw(12) << std::setprecision(3) << "tem" << " "
-         << std::right << setw(12) << std::setprecision(3) << "rawc" << " "
+         << std::right << setw(9) << std::setprecision(3) << "dz" << " "
+         << std::right << setw(9) << std::setprecision(3) << "z" << " "
+         << std::right << setw(9) << std::setprecision(3) << "tem" << " "
+         << std::right << setw(9) << std::setprecision(3) << "liq" << " "
+         << std::right << setw(9) << std::setprecision(3) << "ice" << " "
+         << std::right << setw(9) << std::setprecision(3) << "fznfrc" << " "
+         << std::right << setw(5) << std::setprecision(3) << "fzn" << " "
+         << std::right << setw(9) << std::setprecision(3) << "rawc" << " "
 
          << "SOIL" << "|"
          << "MOSS" << "|"
@@ -142,10 +146,14 @@ std::string Ground::layer_report_string() {
     std::stringstream ls;
     ls << "[" << std::right << setw(2) << idx << "] "
        << std::fixed
-       << std::right << setw(12) << std::setprecision(3) << current_layer->dz << " "
-       << std::right << setw(12) << std::setprecision(3) << current_layer->z << " "
-       << std::right << setw(12) << std::setprecision(3) << current_layer->tem << " "
-       << std::right << setw(12) << std::setprecision(3) << current_layer->rawc << " "
+       << std::right << setw(9) << std::setprecision(3) << current_layer->dz << " "
+       << std::right << setw(9) << std::setprecision(3) << current_layer->z << " "
+       << std::right << setw(9) << std::setprecision(3) << current_layer->tem << " "
+       << std::right << setw(9) << std::setprecision(3) << current_layer->liq << " "
+       << std::right << setw(9) << std::setprecision(3) << current_layer->ice << " "
+       << std::right << setw(9) << std::setprecision(3) << current_layer->frozenfrac << " "
+       << std::right << setw(5) << std::setprecision(3) << current_layer->frozen << " "
+       << std::right << setw(9) << std::setprecision(3) << current_layer->rawc << " "
        //<< std::right << setw(16) << std::setprecision(16) << current_layer << " "
        << layer2pointertag(current_layer, fstsoill) << ""
        << layer2pointertag(current_layer, lstsoill) << "|"
