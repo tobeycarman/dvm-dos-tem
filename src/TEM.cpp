@@ -234,13 +234,10 @@ int main(int argc, char* argv[]){
           if (modeldata.runeq) {
             {
               BOOST_LOG_NAMED_SCOPE("PRE-RUN");
-              /** Env-only "pre-run" stage.
-                   - should use only the env module
-                   - number of years to run can be controlled on cmd line
-                   - use fixed climate that is averaged over first X years
-                   - use static (fixed) co2 value (first element of co2 file)
-                   - FIX: need to set yrs since dsb ?
-                   - FIX: should ignore calibration directives?
+              /** Pre-run stage (environmental module only)
+                - only env module on
+                - fixed (averaged over first X years) climate
+                - fixed co2 value (first element of co2 file)
               */
 
               // turn off everything but env
@@ -255,6 +252,9 @@ int main(int argc, char* argv[]){
 
               BOOST_LOG_SEV(glg, debug) << "Ground, right before 'pre-run'. "
                                         << runner.cohort.ground.layer_report_string();
+
+              // FIX: need to add some logic for looking for restart files to
+              //      start from...
 
               runner.run_years(0, modeldata.pre_run_yrs, "pre-run"); // climate is prepared w/in here.
 
@@ -275,20 +275,30 @@ int main(int argc, char* argv[]){
 
             {
               BOOST_LOG_NAMED_SCOPE("EQ");
+              /** Equlibrium stage
+                - all modules and flags on
+                - fixed (averaged over first X years) climate
+                - fixed co2 value (first element of co2 file)
+              */
 
+              // turn everything on
               runner.cohort.md->set_envmodule(true);
               runner.cohort.md->set_dvmmodule(true);
               runner.cohort.md->set_bgcmodule(true);
+              runner.cohort.md->set_dslmodule(true);
               runner.cohort.md->set_dsbmodule(true);
+              runner.cohort.md->set_nfeed(true);
+              runner.cohort.md->set_avlnflg(true);
+              runner.cohort.md->set_baseline(true);
 
-              runner.cohort.md->set_dslmodule(false);
-              runner.cohort.md->set_nfeed(false);
- 
-              // FIX: what about baseline? avln?
-              // FIX: same behavior in calibration and extrapolation modes???
+              // calibratate w/o fire, but everything else on
+              if (runner.calcontroller_ptr) {
+                runner.cohort.md->set_dsbmodule(false);
+              }
 
-              //  changing climate?: NO - use avgX values
-              //  changing CO2?:     NO - use static value
+              // FIX: need to add some logic for looking for restart files to
+              //      start from...
+
 
               runner.run_years(0, modeldata.max_eq_yrs, "eq-run");
 
@@ -315,43 +325,27 @@ int main(int argc, char* argv[]){
                 runner.cohort.set_state_from_restartdata();
               }
 
-
-
               // write out restart-sp.nc ???
             }
           }
-
-          // NOTE: Could have an option to set some time constants based on
-          //       some sizes/dimensions of the input driving data...
-
-          /**
+          if (modeldata.runtr) {
+            {
+              BOOST_LOG_NAMED_SCOPE("TR");
+              BOOST_LOG_SEV(glg, fatal) << "TRANSIENT RUN NOT IMPLEMENTED YET!";
+              //  tr
+              //    - create climate by loading the driving climate data (historic)
+              //      SIZE: 12 months, length of driving dataset? OR number from inc/timeconst.h
+              //    - set to default module settings: ??
+              //    - run_years( TR_BEG <= iy <= TR_END )
+            }
+          }
+          if (modeldata.runsc) {
+            {
+              BOOST_LOG_NAMED_SCOPE("SC");
+              BOOST_LOG_SEV(glg, fatal) << "SCENARIO RUN NOT IMPLEMENTED YET!";
+            }
+          }
           
-
-           
-            eq
-              - create the climate from the average of the first X years
-                of the driving climate data. 
-                SIZE: 12 months,  1 year
-              - set to default module settings to: ??
-              - run_years( 0 <= iy < MAX_EQ_YEAR )
-              - act on calibration directives
-              -
-           
-            sp
-              - create the climate from the first X years of the driving
-                climate dataset. 
-                SIZE: 12 months,  X years
-              - set to default module settings: ??
-              - run_years( SP_BEG <= iy <= SP_END )
-              
-            tr
-              - create climate by loading the driving climate data (historic)
-                SIZE: 12 months, length of driving dataset? OR number from inc/timeconst.h
-              - set to default module settings: ??
-              - run_years( TR_BEG <= iy <= TR_END )
-              
-          */
-
         } else {
           BOOST_LOG_SEV(glg, debug) << "Skipping cell (" << rowidx << ", " << colidx << ")";
         }
