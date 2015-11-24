@@ -325,29 +325,29 @@ int Richards::updateOneIteration(const double &fbaseflow) {
   double s_node;
   double wimp = 0.001; // mimumum pore for water to exchange between two layers
   double smpmin = -1.e8;
-  double dt =tstep*timestep;
+  double dt = tstep * timestep;
   itsum++;
 
   //Yuan: k-dk/dw-h relationships for all soil layers
-  for (int indx=indx0al; indx<indx0al+numal; indx++) {
+  for (int indx = indx0al; indx < indx0al+numal; indx++) {
     effporo0 = effporo[indx];
-    volliq = fmax(0., liqii[indx]/dzmm[indx]);
+    volliq = fmax(0.0, liqii[indx]/dzmm[indx]);
     volliq = fmin(volliq, effporo0);
 
-    if(indx==indx0al+numal-1) {
-      s1 = volliq/fmax(wimp, effporo0);
-      s2 = hksat[indx] * exp (-2.0*(zmm[indx]/1000.0))
+    if( indx == (indx0al + numal - 1) ) {
+      s1 = volliq / fmax(wimp, effporo0);
+      s2 = hksat[indx] * exp (-2.0 * (zmm[indx]/1000.0))
            * pow(s1, 2.0*bsw[indx]+2.0);
-      hk[indx] = s1*s2;
+      hk[indx] = s1 * s2;
       dhkdw[indx] = (2.0*bsw[indx]+3.0)*s2*0.5/fmax(wimp, effporo0);
     } else {
       effporo2 = effporo[indx+1];
-      volliq2 = fmax(0., liqii[indx+1]/dzmm[indx+1]);
+      volliq2 = fmax(0.0, liqii[indx+1]/dzmm[indx+1]);
       volliq2 = fmin(volliq2, effporo2);
 
-      if(effporo0<wimp || effporo2<wimp) {
-        hk[indx] = 0.;
-        dhkdw[indx] = 0.;
+      if( (effporo0 < wimp) || (effporo2 < wimp) ) {
+        hk[indx] = 0.0;
+        dhkdw[indx] = 0.0;
       } else {
         s1 =(volliq2+volliq)/(effporo2+effporo0);
         s2 = hksat[indx+1] * exp (-2.0*(zmm[indx+1]/1000.0))
@@ -357,12 +357,12 @@ int Richards::updateOneIteration(const double &fbaseflow) {
       }
     }
 
-    if (hk[indx]>=numeric_limits<double>::infinity()
-        || dhkdw[indx]>=numeric_limits<double>::infinity()) {
+    if (hk[indx] >= numeric_limits<double>::infinity()
+        || dhkdw[indx] >= numeric_limits<double>::infinity()) {
       BOOST_LOG_SEV(glg, warn) << "'hk' or 'dhkdw' is out of bounds!";
     }
 
-    if (volliq>1.0 || volliq2>1.0) {
+    if (volliq > 1.0 || volliq2 > 1.0) {
       BOOST_LOG_SEV(glg, warn) << "vwc is out of bounds! (volliq or volliq2 > 1.0)";
     }
 
@@ -392,20 +392,20 @@ int Richards::updateOneIteration(const double &fbaseflow) {
     qin[ind] = 0.;
 
     if (ind == indx0sl) {//for first soil layer: infiltration/evaporation occurs
-      qin[ind] = qinfil -qevap;
+      qin[ind] = qinfil - qevap;
     }
 
-    den = zmm[ind+1]-zmm[ind];
-    num = smp[ind+1]-smp[ind]-den;
+    den = zmm[ind+1] - zmm[ind];
+    num = smp[ind+1] - smp[ind] - den;
     qout[ind] = -hk[ind] * num/den;
-    dqodw1 = -(-hk[ind]*dsmpdw[ind] + num*dhkdw[ind])/den;
-    dqodw2 = -(hk[ind]*dsmpdw[ind+1] + num*dhkdw[ind])/den;
+    dqodw1 = -(-hk[ind] * dsmpdw[ind] + num * dhkdw[ind]) / den;
+    dqodw2 = -(hk[ind] * dsmpdw[ind+1] + num * dhkdw[ind]) / den;
     rmx[ind] = qin[ind] - qout[ind] - qtrans[ind];
-    amx[ind] = 0.;
-    bmx[ind] = dzmm[ind] *(sdamp +1/dt) + dqodw1;
+    amx[ind] = 0.0;
+    bmx[ind] = dzmm[ind] * (sdamp + 1/dt) + dqodw1;
     cmx[ind] = dqodw2;
 
-    if (numal>2) {
+    if (numal > 2) {
       for(ind=indx0al+1; ind<indx0al+numal-1; ind++) { // layer 2 ~ the second last bottom layer
         den = zmm[ind]-zmm[ind-1];
         num = smp[ind]-smp[ind-1] -den;
@@ -430,7 +430,7 @@ int Richards::updateOneIteration(const double &fbaseflow) {
       }
     }
 
-    //bottom layer
+    // bottom layer
     ind = indx0al+numal-1;
     den = zmm[ind]-zmm[ind-1];
     num = smp[ind]-smp[ind-1]-den;
@@ -456,11 +456,11 @@ int Richards::updateOneIteration(const double &fbaseflow) {
   for(int il=indx0al; il<indx0al+numal; il++) {
     liqit[il] = liqii[il] + dzmm[il] * dwat[il];
 
-    if(liqit[il]!=liqit[il]) {
+    if(liqit[il] != liqit[il]) {
       BOOST_LOG_SEV(glg, warn) << "Richards::updateOneIteration(..), water is NaN!";
     }
 
-    if (liqit[il]>=numeric_limits<double>::infinity()) {
+    if (liqit[il] >= numeric_limits<double>::infinity()) {
       BOOST_LOG_SEV(glg, warn) << "liqit["<<il<<"] is greater than infinity.";
     }
   }
