@@ -492,47 +492,50 @@ void Soil_Env::updateDailySM() {
   double trans[MAX_SOI_LAY], melt, evap, rnth;
 
   for (int i=0; i<MAX_SOI_LAY; i++) {
-    trans[i] = ed->d_v2a.tran*ed->d_soid.fbtran[i]; //mm/day: summed for
-                                                    //  all Vegetations
+    trans[i] = ed->d_v2a.tran*ed->d_soid.fbtran[i]; // mm/day: summed for
+                                                    // all Vegetations
   }
 
-  evap  = ed->d_soi2a.evap; //mm/day: summed for soil evaporation
-  rnth  = (ed->d_v2g.rthfl +ed->d_v2g.rdrip) //note: rthfl and rdrip
-                                             //  are already fpc adjusted
-          +(1.- cd->m_vegd.fpcsum)*ed->d_a2l.rnfl; //mm/day
-  melt  = ed->d_snw2soi.melt; //mm/day
+  evap  = ed->d_soi2a.evap; // mm/day: summed for soil evaporation
+
+  // NOTE: rthfl and rdrip are already fpc adjusted!
+  rnth  = (ed->d_v2g.rthfl + ed->d_v2g.rdrip) +
+          (1.0 - cd->m_vegd.fpcsum) * ed->d_a2l.rnfl; // mm/day
+  melt  = ed->d_snw2soi.melt; // mm/day
+
   // 1) calculate the surface runoff and infiltration
-  ed->d_soi2l.qover  = 0.;
-  ed->d_soi2l.qdrain = 0.;
+  ed->d_soi2l.qover  = 0.0;
+  ed->d_soi2l.qdrain = 0.0;
   ed->d_sois.watertab = getWaterTable(lstsoill);
 
-  if(rnth+melt>0) {
+  if( (rnth + melt) > 0 ) {
     ed->d_soi2l.qover  = getRunoff(fstsoill, drainl, rnth, melt); //mm/day
   } else {
-    ed->d_soi2l.qover  = 0.;
+    ed->d_soi2l.qover  = 0.0;
   }
 
   double infil = rnth + melt - ed->d_soi2l.qover;
   ed->d_soi2l.qinfl = infil;
+
   // 2) Then soil water dynamics at daily time step
-  double sinday= 86400.;
 
   for (int i=0; i<MAX_SOI_LAY; i++) {
-    trans[i] /=sinday; // mm/day to mm/s
+    trans[i] /= SEC_IN_DAY; // mm/day to mm/s
   }
 
-  infil /=sinday; // mm/day to mm/s
-  evap /=sinday;  // mm/day to mm/s
-  // water drainage condition
-  double baseflow = 1.; //fraction of bottom drainage (free) into water system:
-                        //  0 - 1 upon drainage condition
+  infil /= SEC_IN_DAY; // mm/day to mm/s
+  evap /= SEC_IN_DAY;  // mm/day to mm/s
 
-  if(cd->drainage_type == 1) { //0: well-drained; 1: poorly-drained
-    baseflow = 0.;
+  // water drainage condition
+  double baseflow = 1.0; // fraction of bottom drainage (free) into water system:
+                         //  0 - 1 upon drainage condition
+
+  if(cd->drainage_type == 1) { // 0: well-drained; 1: poorly-drained
+    baseflow = 0.0;
   }
 
   richards.update(fstsoill, drainl, draindepth, baseflow, trans,
-                  evap, infil, sinday);
+                  evap, infil, SEC_IN_DAY);
   ed->d_soi2l.qdrain  += richards.qdrain;
   //
   ground->checkWaterValidity();
