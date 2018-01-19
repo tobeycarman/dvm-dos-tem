@@ -91,5 +91,24 @@ private:
   void monthly_output(const int year, const int month, const std::string& runstage);
   void yearly_output(const int year, const std::string& stage, const int startyr, const int endyr);
 
+  void send_to_master(const std::string& vname,
+                      const std::string& fname,
+                      const std::vector<int>& starts,
+                      const std::vector<int>& counts,
+                      const std::vector<double>& data);
+
+  void io_wrapper(const std::string& vname,
+                  const std::string& curr_filename,
+                  const std::vector<size_t>& starts,
+                  const std::vector<size_t>& counts,
+                  const std::vector<double>& values);
+
+  void write_var_to_netcdf(const std::string& vname,
+                           const std::string& curr_filename,
+                           const std::vector<size_t>& starts,
+                           const std::vector<size_t>& counts,
+                           const std::vector<double>& values);
+
+
 };
 #endif /* RUNNER_H_ */
