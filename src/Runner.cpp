@@ -893,6 +893,36 @@ void Runner::output_netCDF_yearly(int year, std::string stage){
     output_netCDF(md.yearly_netcdf_outputs, year, 0, stage);
 }
 
+
+void Runner::write_var_to_netcdf(const std::string& vname,
+                                 const std::string& curr_filename,
+                                 const std::vector<size_t>& starts,
+                                 const std::vector<size_t>& counts,
+                                 const std::vector<double>& values) {
+
+  int ncid;
+  int cv;
+
+#ifdef WITHMPI
+  temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
+  temutil::nc( nc_inq_varid(ncid, vname.c_str(), &cv) );
+  temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
+#else
+  temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
+  temutil::nc( nc_inq_varid(ncid, vname.c_str(), &cv) );
+#endif
+
+  BOOST_LOG_SEV(glg, fatal) << "Outputting variable: " << vname << " for " << starts[0] << starts[1] << starts[2] << "<- eh?";
+  if (counts.size() < 1) { // just a single variable/value
+    temutil::nc( nc_put_var1_double(ncid, cv, &starts[0], &values[0]) );
+  } else {       // put a bunch of values using the counts array
+    temutil::nc( nc_put_vara_double(ncid, cv, &starts[0], &counts[0], &values[0]) );
+  }
+  temutil::nc( nc_close(ncid) );
+
+}
+
+
 void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, int year, int month, std::string stage){
   int month_timestep = year*12 + month;
 
@@ -1000,28 +1030,29 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
   count5[3] = 1;
   count5[4] = 1;
 
-
   /*** Single option vars: (year) ***/
   map_itr = netcdf_outputs.find("ALD");
   if(map_itr != netcdf_outputs.end()){
-    BOOST_LOG_SEV(glg, debug)<<"NetCDF output: ALD";
+
     curr_spec = map_itr->second;
     curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
 
     #pragma omp critical(outputALD)
     {
-#ifdef WITHMPI
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "ALD", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "ALD", &cv) );
-#endif
-      start3[0] = year;
 
-      temutil::nc( nc_put_var1_double(ncid, cv, start3, &cohort.edall->y_soid.ald) );
-      temutil::nc( nc_close(ncid) );
+    start3[0] = year;
+
+    std::string sv("ALD");
+    std::vector<size_t> starts(start3, start3 + sizeof(start3) / sizeof(start3[0]));
+    std::vector<size_t> counts;
+    std::vector<double> values(1, cohort.edall->y_soid.ald);
+
+#ifdef WITHMPI
+    add_to_package_for_IO_slave(sv, curr_filename, starts, counts, values);
+#else
+    write_var_to_netcdf(sv, curr_filename, starts, counts, values);
+#endif
+
     }//end critical(outputALD)
   }//end ALD
   map_itr = netcdf_outputs.end();
@@ -1029,20 +1060,13 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
   map_itr = netcdf_outputs.find("DEEPDZ");
   if(map_itr != netcdf_outputs.end()){
-    BOOST_LOG_SEV(glg, debug)<<"NetCDF output: DEEPDZ";
+
     curr_spec = map_itr->second;
     curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
 
     #pragma omp critical(outputDEEPDZ)
     {
-#ifdef WITHMPI
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "DEEPDZ", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "DEEPDZ", &cv) );
-#endif
+
       start3[0] = year;
 
       double deepdz = 0;
@@ -1054,8 +1078,16 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         currL = currL->nextl;
       }
 
-      temutil::nc( nc_put_var1_double(ncid, cv, start3, &deepdz) );
-      temutil::nc( nc_close(ncid) );
+      std::string sv("DEEPDZ");
+      std::vector<size_t> starts(start3, start3 + sizeof(start3) / sizeof(start3[0]));
+      std::vector<size_t> counts;
+      std::vector<double> values(1, deepdz);
+#ifdef WITHMPI
+      send_to_master(...);
+#else
+      write_var_to_netcdf(sv, curr_filename, starts, counts, values);
+#endif
+
     }//end critical(outputDEEPDZ)
   }//end DEEPDZ
   map_itr = netcdf_outputs.end();
