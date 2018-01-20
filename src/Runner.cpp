@@ -894,6 +894,27 @@ void Runner::output_netCDF_yearly(int year, std::string stage){
 }
 
 
+/** The wrapper makes decisions about whether to send the data to an IO slave
+    or whether to write the data out here and now. */
+void Runner::io_wrapper(const std::string& vname,
+                                 const std::string& curr_filename,
+                                 const std::vector<size_t>& starts,
+                                 const std::vector<size_t>& counts,
+                                 const std::vector<double>& values) {
+
+#ifdef WITHMPI
+  if (rank == 0) {
+    write_var_to_netcdf(vname, curr_filename, starts, counts, values);
+  } else {
+    add_to_package_for_IO_slave(vname, curr_filename, starts, counts, values);
+  }
+#else
+  write_var_to_netcdf(vname, curr_filename, starts, counts, values);
+#endif
+
+}
+
+
 void Runner::write_var_to_netcdf(const std::string& vname,
                                  const std::string& curr_filename,
                                  const std::vector<size_t>& starts,
@@ -1047,11 +1068,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     std::vector<size_t> counts;
     std::vector<double> values(1, cohort.edall->y_soid.ald);
 
-#ifdef WITHMPI
-    add_to_package_for_IO_slave(sv, curr_filename, starts, counts, values);
-#else
-    write_var_to_netcdf(sv, curr_filename, starts, counts, values);
-#endif
+    io_wrapper(sv, curr_filename, starts, counts, values);
 
     }//end critical(outputALD)
   }//end ALD
@@ -1082,11 +1099,8 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       std::vector<size_t> starts(start3, start3 + sizeof(start3) / sizeof(start3[0]));
       std::vector<size_t> counts;
       std::vector<double> values(1, deepdz);
-#ifdef WITHMPI
-      send_to_master(...);
-#else
-      write_var_to_netcdf(sv, curr_filename, starts, counts, values);
-#endif
+
+      io_wrapper(sv, curr_filename, starts, counts, values);
 
     }//end critical(outputDEEPDZ)
   }//end DEEPDZ
@@ -1101,20 +1115,17 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputGROWEND)
     {
-#ifdef WITHMPI
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "GROWEND", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "GROWEND", &cv) );
-#endif
-      start3[0] = year;
-
       double growend = cohort.edall->y_soid.rtdpGEoutput;
 
-      temutil::nc( nc_put_var1_double(ncid, cv, start3, &growend) );
-      temutil::nc( nc_close(ncid) );
+      start3[0] = year;
+
+      std::string sv("GROWEND");
+      std::vector<size_t> starts(start3, start3 + sizeof(start3) / sizeof(start3[0]));
+      std::vector<size_t> counts;
+      std::vector<double> values(1, growend);
+
+      io_wrapper(sv, curr_filename, starts, counts, values);
+
     }//end critical(outputGROWEND)
   }//end GROWEND
   map_itr = netcdf_outputs.end();
