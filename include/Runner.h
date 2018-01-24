@@ -18,6 +18,8 @@
 #include <deque>
 #include <map>
 
+#include <boost/multi_array.hpp>
+
 #ifdef WITHMPI
 #include <mpi.h>
 #endif
@@ -31,6 +33,9 @@
 
 using namespace std;
 
+typedef boost::multi_array<double, 1> ma1dd;
+typedef boost::multi_array<double, 2> ma2dd;
+typedef boost::multi_array<double, 3> ma3dd;
 
 class Runner {
 public:
@@ -97,17 +102,20 @@ private:
                       const std::vector<int>& counts,
                       const std::vector<double>& data);
 
+  template<typename T>
   void io_wrapper(const std::string& vname,
                   const std::string& curr_filename,
                   const std::vector<size_t>& starts,
                   const std::vector<size_t>& counts,
-                  const std::vector<double>& values);
+                  const T& values);
 
+  template<typename T>
   void write_var_to_netcdf(const std::string& vname,
                            const std::string& curr_filename,
                            const std::vector<size_t>& starts,
                            const std::vector<size_t>& counts,
-                           const std::vector<double>& values);
+                           const T& values);
+
 
 
 };
