@@ -1451,14 +1451,6 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputBURNAIR2SOIN)
     {
-#ifdef WITHMPI
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "BURNAIR2SOIN", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "BURNAIR2SOIN", &cv) );
-#endif
 
       double burnair2soin;
       if(curr_spec.monthly){
@@ -1473,8 +1465,13 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         }
       }
 
-      temutil::nc( nc_put_var1_double(ncid, cv, start3, &burnair2soin) );
-      temutil::nc( nc_close(ncid) );
+      std::string sv("BURNAIR2SOIN");
+      std::vector<size_t> starts(start3, start3 + sizeof(start3) / sizeof(start3[0]));
+      std::vector<size_t> counts;
+      std::vector<double> values(1, burnair2soin);
+
+      io_wrapper(sv, curr_filename, starts, counts, values);
+
     }//end critical(outputBURNAIR2SOIN)
   }//end BURNAIR2SOIN
   map_itr = netcdf_outputs.end();
@@ -5364,17 +5361,15 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
         ma2dd vegc(boost::extents[NUM_PFT_PART][NUM_PFT]);
         for(int ip=0; ip<NUM_PFT; ip++){
-          if(cohort.cd.m_veg.vegcov[ip]>0.){//only check PFTs that exist
 
-            for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
-              if(curr_spec.monthly){
-                start5[0] = month_timestep;
-                vegc[ipp][ip] = cohort.bd[ip].m_vegs.c[ipp];
-              }
-              else if(curr_spec.yearly){
-                start5[0] = year;
-                vegc[ipp][ip] = cohort.bd[ip].y_vegs.c[ipp];
-              }
+          for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
+            if(curr_spec.monthly){
+              starts[0] = month_timestep;
+              vegc[ipp][ip] = cohort.bd[ip].m_vegs.c[ipp];
+            }
+            else if(curr_spec.yearly){
+              starts[0] = year;
+              vegc[ipp][ip] = cohort.bd[ip].y_vegs.c[ipp];
             }
 
           }
@@ -5387,64 +5382,70 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
 
+        std::vector<size_t> startsPFT(PFTstart4, PFTstart4 + sizeof(PFTstart4) / sizeof(PFTstart4[0]));
+        std::vector<size_t> countsPFT(PFTcount4, PFTcount4 + sizeof(PFTcount4) / sizeof(PFTcount4[0]));
 
-        double vegc[NUM_PFT];
+        ma1dd vegc(boost::extents[NUM_PFT]);
         for(int ip=0; ip<NUM_PFT; ip++){
-          if(cohort.cd.m_veg.vegcov[ip]>0.){//only check PFTs that exist
 
-            if(curr_spec.monthly){
-              PFTstart4[0] = month_timestep;
-              vegc[ip] = cohort.bd[ip].m_vegs.call;
-            }
-            else if(curr_spec.yearly){
-              PFTstart4[0] = year;
-              vegc[ip] = cohort.bd[ip].y_vegs.call;
-            }
-
+          if(curr_spec.monthly){
+            startsPFT[0] = month_timestep;
+            vegc[ip] = cohort.bd[ip].m_vegs.call;
+          }
+          else if(curr_spec.yearly){
+            startsPFT[0] = year;
+            vegc[ip] = cohort.bd[ip].y_vegs.call;
           }
         }
 
-        temutil::nc( nc_put_vara_double(ncid, cv, PFTstart4, PFTcount4, &vegc[0]) );
+        io_wrapper(sv, curr_filename, startsPFT, countsPFT, vegc);
+        //temutil::nc( nc_put_vara_double(ncid, cv, PFTstart4, PFTcount4, &vegc[0]) );
       }
       //Compartment only
       else if(!curr_spec.pft && curr_spec.compartment){
 
-        double vegc[NUM_PFT_PART] = {0};
+        // does this result in something like
+        // "ecosystem wide leaf", "ecosuystem wide wood", "ecosystem wide root"s?
+        // summed across PFTs?
+
+        std::vector<size_t> startsComp(CompStart4, CompStart4 + sizeof(CompStart4) / sizeof(CompStart4[0]));
+        std::vector<size_t> countsComp(CompCount4, CompCount4 + sizeof(CompCount4) / sizeof(CompCount4[0]));
+
+        ma1dd vegc(boost::extents[NUM_PFT_PART]);
+        vegc[0] = 0;
         for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
           for(int ip=0; ip<NUM_PFT; ip++){
-            if(cohort.cd.m_veg.vegcov[ip]>0.){//only check PFTs that exist
 
-              if(curr_spec.monthly){
-                CompStart4[0] = month_timestep;
-                vegc[ipp] += cohort.bd[ip].m_vegs.c[ipp];
-              }
-              else if(curr_spec.yearly){
-                CompStart4[0] = year;
-                vegc[ipp] += cohort.bd[ip].y_vegs.c[ipp];
-              }
-
+            if(curr_spec.monthly){
+              startsComp[0] = month_timestep;
+              vegc[ipp] += cohort.bd[ip].m_vegs.c[ipp];
+            }
+            else if(curr_spec.yearly){
+              startsComp[0] = year;
+              vegc[ipp] += cohort.bd[ip].y_vegs.c[ipp];
             }
           }
         }
-
-        temutil::nc( nc_put_vara_double(ncid, cv, CompStart4, CompCount4, &vegc[0]) );
+        io_wrapper(sv, curr_filename, startsComp, countsComp, vegc);
+        //temutil::nc( nc_put_vara_double(ncid, cv, startsComp, countsComp, vegc) );
       }
       //Neither PFT nor compartment
       else if(!curr_spec.pft && !curr_spec.compartment){
 
-        double vegc;
+        std::vector<size_t> starts(start3, start3 + sizeof(start3) / sizeof(start3[0]));
+        std::vector<size_t> counts(count3, count3 + sizeof(count3) / sizeof(count3[0]));
+
+        ma1dd vegc(boost::extents[1]);
         if(curr_spec.monthly){
-          start3[0] = month_timestep;
-          vegc = cohort.bdall->m_vegs.call;
+          starts[0] = month_timestep;
+          vegc[0] = cohort.bdall->m_vegs.call;
         }
         else if(curr_spec.yearly){
-          start3[0] = year;
-          vegc = cohort.bdall->y_vegs.call;
+          starts[0] = year;
+          vegc[0] = cohort.bdall->y_vegs.call;
         }
-
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &vegc) );
+        io_wrapper(sv, curr_filename, starts, counts, vegc);
       }
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputVEGC)
   }//end VEGC
   map_itr = netcdf_outputs.end();
