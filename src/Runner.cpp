@@ -896,11 +896,12 @@ void Runner::output_netCDF_yearly(int year, std::string stage){
 
 /** The wrapper makes decisions about whether to send the data to an IO slave
     or whether to write the data out here and now. */
+template<typename T>
 void Runner::io_wrapper(const std::string& vname,
                                  const std::string& curr_filename,
                                  const std::vector<size_t>& starts,
                                  const std::vector<size_t>& counts,
-                                 const std::vector<double>& values) {
+                                 const T& values) {
 
 #ifdef WITHMPI
   if (rank == 0) {
@@ -914,12 +915,12 @@ void Runner::io_wrapper(const std::string& vname,
 
 }
 
-
+template<typename T>
 void Runner::write_var_to_netcdf(const std::string& vname,
                                  const std::string& curr_filename,
                                  const std::vector<size_t>& starts,
                                  const std::vector<size_t>& counts,
-                                 const std::vector<double>& values) {
+                                 const T& values) {
 
   int ncid;
   int cv;
@@ -935,9 +936,9 @@ void Runner::write_var_to_netcdf(const std::string& vname,
 
   BOOST_LOG_SEV(glg, fatal) << "Outputting variable: " << vname << " for " << starts[0] << starts[1] << starts[2] << "<- eh?";
   if (counts.size() < 1) { // just a single variable/value
-    temutil::nc( nc_put_var1_double(ncid, cv, &starts[0], &values[0]) );
+    temutil::nc( nc_put_var1_double(ncid, cv, &starts[0], values.data()) );
   } else {       // put a bunch of values using the counts array
-    temutil::nc( nc_put_vara_double(ncid, cv, &starts[0], &counts[0], &values[0]) );
+    temutil::nc( nc_put_vara_double(ncid, cv, &starts[0], &counts[0], values.data()) );
   }
   temutil::nc( nc_close(ncid) );
 
@@ -1066,7 +1067,8 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     std::string sv("ALD");
     std::vector<size_t> starts(start3, start3 + sizeof(start3) / sizeof(start3[0]));
     std::vector<size_t> counts;
-    std::vector<double> values(1, cohort.edall->y_soid.ald);
+    ma1dd values(boost::extents[1]);
+    values[0] = cohort.edall->y_soid.ald;
 
     io_wrapper(sv, curr_filename, starts, counts, values);
 
@@ -1098,8 +1100,8 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       std::string sv("DEEPDZ");
       std::vector<size_t> starts(start3, start3 + sizeof(start3) / sizeof(start3[0]));
       std::vector<size_t> counts;
-      std::vector<double> values(1, deepdz);
-
+      ma1dd values(boost::extents[1]);
+      values[0] = deepdz;
       io_wrapper(sv, curr_filename, starts, counts, values);
 
     }//end critical(outputDEEPDZ)
@@ -4987,26 +4989,23 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
   //VEGC
   map_itr = netcdf_outputs.find("VEGC");
- if(map_itr != netcdf_outputs.end()){
+  if(map_itr != netcdf_outputs.end()){
     BOOST_LOG_SEV(glg, debug)<<"NetCDF output: VEGC";
     curr_spec = map_itr->second;
     curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
 
     #pragma omp critical(outputVEGC)
     {
-#ifdef WITHMPI
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "VEGC", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "VEGC", &cv) );
-#endif
+
+      std::string sv("VEGC");
 
       //PFT and compartment
       if(curr_spec.pft && curr_spec.compartment){
 
-        double vegc[NUM_PFT_PART][NUM_PFT];
+        std::vector<size_t> starts(start5, start5 + sizeof(start5) / sizeof(start5[0]));
+        std::vector<size_t> counts(count5, count5 + sizeof(count5) / sizeof(count5[0]));
+
+        ma2dd vegc(boost::extents[NUM_PFT_PART][NUM_PFT]);
         for(int ip=0; ip<NUM_PFT; ip++){
           for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
             if(curr_spec.monthly){
@@ -5020,10 +5019,13 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           }
         }
 
-        temutil::nc( nc_put_vara_double(ncid, cv, start5, count5, &vegc[0][0]) );
+        io_wrapper(sv, curr_filename, starts, counts, vegc);
+        //temutil::nc( nc_put_vara_double(ncid, cv, start5, count5, &vegc[0][0]) );
+
       }
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
+
 
         double vegc[NUM_PFT];
         for(int ip=0; ip<NUM_PFT; ip++){
