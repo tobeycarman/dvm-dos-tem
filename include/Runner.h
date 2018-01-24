@@ -105,6 +105,13 @@ private:
                       const std::vector<double>& data);
 
   template<typename T>
+  void add_to_package_for_IO_slave(const std::string vname, 
+                                   const std::string curr_filename,
+                                   const std::vector<size_t> starts, 
+                                   const std::vector<size_t> counts, 
+                                   const T& values);
+
+  template<typename T>
   void io_wrapper(const std::string& vname,
                   const std::string& curr_filename,
                   const std::vector<size_t>& starts,
