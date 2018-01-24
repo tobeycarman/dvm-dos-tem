@@ -21,12 +21,16 @@
 
 #include "cohortconst.h" // needed for NUM_PFT
 
-#ifdef WITHMPI
-#include <mpi.h>
+#ifdef WITHNCPAR
 #include <netcdf_par.h>
 #else
 #include <netcdf.h>
 #endif
+
+#ifdef WITHMPI
+#include <mpi.h>
+#endif
+
 
 namespace temutil {
 

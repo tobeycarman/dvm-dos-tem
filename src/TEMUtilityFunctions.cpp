@@ -309,7 +309,7 @@ namespace temutil {
 
     int ncid;
 
-#ifdef WITHMPI
+#ifdef WITHNCPAR
     temutil::nc( nc_open_par(fname.c_str(), NC_NOWRITE|NC_MPIIO, MPI_COMM_WORLD, MPI_INFO_NULL, &ncid) );
 #else
     temutil::nc( nc_open(fname.c_str(), NC_NOWRITE, &ncid) );
@@ -350,7 +350,7 @@ namespace temutil {
 
     int ncid;
 
-#ifdef WITHMPI
+#ifdef WITHNCPAR
     temutil::nc( nc_open_par(fname.c_str(), NC_NOWRITE|NC_MPIIO, MPI_COMM_WORLD, MPI_INFO_NULL, &ncid) );
 #else
     temutil::nc( nc_open(fname.c_str(), NC_NOWRITE, &ncid) );

@@ -910,7 +910,7 @@ void RestartData::create_empty_file(const std::string& fname,
   BOOST_LOG_SEV(glg, debug) << "Opening new file: "<<fname<<" with 'NC_CLOBBER'";
   int ncid;
 
-#ifdef WITHMPI
+#ifdef WITHNCPAR
   BOOST_LOG_SEV(glg, debug) << "Creating new parallel restart file: "<<fname;
   temutil::nc( nc_create_par(fname.c_str(), NC_CLOBBER|NC_NETCDF4|NC_MPIIO, MPI_COMM_WORLD, MPI_INFO_NULL, &ncid) );
 #else
@@ -1172,7 +1172,7 @@ void RestartData::write_px_vars(const std::string& fname, const int rowidx, cons
   
   int ncid;
 
-#ifdef WITHMPI
+#ifdef WITHNCPAR
   temutil::nc( nc_open_par(fname.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
 #else
   temutil::nc( nc_open(fname.c_str(), NC_WRITE, &ncid) );
@@ -1234,7 +1234,7 @@ void RestartData::write_px_pft_vars(const std::string& fname, const int rowidx, 
 
   int ncid;
 
-#ifdef WITHMPI
+#ifdef WITHNCPAR
   temutil::nc( nc_open_par(fname.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
 #else
   temutil::nc( nc_open(fname.c_str(), NC_WRITE, &ncid) );
@@ -1297,7 +1297,7 @@ void RestartData::write_px_pftpart_pft_vars(const std::string& fname, const int 
 
   int ncid;
 
-#ifdef WITHMPI
+#ifdef WITHNCPAR
   temutil::nc( nc_open_par(fname.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
 #else
   temutil::nc( nc_open(fname.c_str(), NC_WRITE, &ncid) );
@@ -1332,7 +1332,7 @@ void RestartData::write_px_snow_vars(const std::string& fname, const int rowidx,
 
   int ncid;
 
-#ifdef WITHMPI
+#ifdef WITHNCPAR
   temutil::nc( nc_open_par(fname.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
 #else
   temutil::nc( nc_open(fname.c_str(), NC_WRITE, &ncid) );
@@ -1373,7 +1373,7 @@ void RestartData::write_px_snow_vars(const std::string& fname, const int rowidx,
 void RestartData::write_px_root_pft_vars(const std::string& fname, const int rowidx, const int colidx) {
   int ncid;
 
-#ifdef WITHMPI
+#ifdef WITHNCPAR
   temutil::nc( nc_open_par(fname.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
 #else
   temutil::nc( nc_open(fname.c_str(), NC_WRITE, &ncid) );
@@ -1405,7 +1405,7 @@ void RestartData::write_px_soil_vars(const std::string& fname, const int rowidx,
 
   int ncid;
 
-#ifdef WITHMPI
+#ifdef WITHNCPAR
   temutil::nc( nc_open_par(fname.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
 #else
   temutil::nc( nc_open(fname.c_str(), NC_WRITE, &ncid) );
@@ -1461,7 +1461,7 @@ void RestartData::write_px_rock_vars(const std::string& fname, const int rowidx,
 
   int ncid;
 
-#ifdef WITHMPI
+#ifdef WITHNCPAR
   temutil::nc( nc_open_par(fname.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
 #else
   temutil::nc( nc_open(fname.c_str(), NC_WRITE, &ncid) );
@@ -1495,7 +1495,7 @@ void RestartData::write_px_front_vars(const std::string& fname, const int rowidx
 
   int ncid;
 
-#ifdef WITHMPI
+#ifdef WITHNCPAR
   temutil::nc( nc_open_par(fname.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
 #else
   temutil::nc( nc_open(fname.c_str(), NC_WRITE, &ncid) );
@@ -1529,7 +1529,7 @@ void RestartData::write_px_front_vars(const std::string& fname, const int rowidx
 void RestartData::write_px_prev_pft_vars(const std::string& fname, const int rowidx, const int colidx) {
   int ncid;
 
-#ifdef WITHMPI
+#ifdef WITHNCPAR
   temutil::nc( nc_open_par(fname.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
 #else
   temutil::nc( nc_open(fname.c_str(), NC_WRITE, &ncid) );

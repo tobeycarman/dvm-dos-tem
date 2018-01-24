@@ -2,6 +2,13 @@
 #include <algorithm>
 #include <json/writer.h>
 
+//#include <boost/mpi.hpp>
+
+#ifdef WITHNCPAR
+#include <netcdf_par.h>
+#else
+#include <netcdf.h>
+#endif
 
 #ifdef WITHMPI
 #include <mpi.h>
@@ -968,7 +975,7 @@ void Runner::write_var_to_netcdf(const std::string& vname,
   int ncid;
   int cv;
 
-#ifdef WITHMPI
+#ifdef WITH_NCPAR
   temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
   temutil::nc( nc_inq_varid(ncid, vname.c_str(), &cv) );
   temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
