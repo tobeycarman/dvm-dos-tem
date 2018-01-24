@@ -20,6 +20,12 @@
 
 #include <boost/multi_array.hpp>
 
+#ifdef WITHNCPAR
+#include <netcdf_par.h>
+#else
+#include <netcdf.h>
+#endif
+
 #ifdef WITHMPI
 #include <mpi.h>
 #endif

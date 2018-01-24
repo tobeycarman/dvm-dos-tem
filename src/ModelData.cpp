@@ -363,7 +363,7 @@ void ModelData::create_netCDF_output_files(int ysize, int xsize, const std::stri
       // convert path to string for simplicity in the following function calls
       std::string creation_filestr = output_filepath.string();
 
-#ifdef WITHMPI
+#ifdef WITHNCPAR
       // Creating PARALLEL NetCDF file
       BOOST_LOG_SEV(glg, debug)<<"Creating a parallel output NetCDF file " << creation_filestr;
       temutil::nc( nc_create_par(creation_filestr.c_str(), NC_CLOBBER|NC_NETCDF4|NC_MPIIO, MPI_COMM_WORLD, MPI_INFO_NULL, &ncid) );
@@ -401,7 +401,7 @@ void ModelData::create_netCDF_output_files(int ysize, int xsize, const std::stri
         vartype3D_dimids[2] = xD;
 
         temutil::nc( nc_def_var(ncid, name.c_str(), NC_DOUBLE, 3, vartype3D_dimids, &Var) );
-#ifdef WITHMPI
+#ifdef WITHNCPAR
         //Instruct HDF5 to use independent parallel access for this variable
         temutil::nc( nc_var_par_access(ncid, Var, NC_INDEPENDENT) );
 #endif
@@ -417,7 +417,7 @@ void ModelData::create_netCDF_output_files(int ysize, int xsize, const std::stri
         vartypeVeg4D_dimids[3] = xD;
 
         temutil::nc( nc_def_var(ncid, name.c_str(), NC_DOUBLE, 4, vartypeVeg4D_dimids, &Var) );
-#ifdef WITHMPI
+#ifdef WITHNCPAR
         //Instruct HDF5 to use independent parallel access for this variable
         temutil::nc( nc_var_par_access(ncid, Var, NC_INDEPENDENT) );
 #endif
@@ -433,7 +433,7 @@ void ModelData::create_netCDF_output_files(int ysize, int xsize, const std::stri
         vartypeVeg4D_dimids[3] = xD;
 
         temutil::nc( nc_def_var(ncid, name.c_str(), NC_DOUBLE, 4, vartypeVeg4D_dimids, &Var) );
-#ifdef WITHMPI
+#ifdef WITHNCPAR
         //Instruct HDF5 to use independent parallel access for this variable
         temutil::nc( nc_var_par_access(ncid, Var, NC_INDEPENDENT) );
 #endif
@@ -451,7 +451,7 @@ void ModelData::create_netCDF_output_files(int ysize, int xsize, const std::stri
         vartypeVeg5D_dimids[4] = xD;
 
         temutil::nc( nc_def_var(ncid, name.c_str(), NC_DOUBLE, 5, vartypeVeg5D_dimids, &Var) );
-#ifdef WITHMPI
+#ifdef WITHNCPAR
         //Instruct HDF5 to use independent parallel access for this variable
         temutil::nc( nc_var_par_access(ncid, Var, NC_INDEPENDENT) );
 #endif
@@ -467,7 +467,7 @@ void ModelData::create_netCDF_output_files(int ysize, int xsize, const std::stri
         vartypeSoil4D_dimids[3] = xD;
 
         temutil::nc( nc_def_var(ncid, name.c_str(), NC_DOUBLE, 4, vartypeSoil4D_dimids, &Var) );
-#ifdef WITHMPI
+#ifdef WITHNCPAR
         //Instruct HDF5 to use independent parallel access for this variable
         temutil::nc( nc_var_par_access(ncid, Var, NC_INDEPENDENT) );
 #endif
