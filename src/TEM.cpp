@@ -428,12 +428,13 @@ int main(int argc, char* argv[]){
 
             cell_etime = time(0);
             BOOST_LOG_SEV(glg, note) << "Finished cell " << rowidx << ", " << colidx << ". Writing status file...";
-            std::cout << "cell " << rowidx << ", " << colidx << " complete." << difftime(cell_etime, cell_stime) << std::endl;
+            std::cout << "cell " << rowidx << ", " << colidx << " complete. time (secs): " << difftime(cell_etime, cell_stime) << std::endl;
             write_status(run_status_fname, rowidx, colidx, 100);
             
           } catch (std::exception& e) {
 
             BOOST_LOG_SEV(glg, err) << "EXCEPTION!! (row, col): (" << rowidx << ", " << colidx << "): " << e.what();
+            std::cout << "EXCEPTION! (row, col): (" << rowidx << ", " << colidx << "): " << e.what() << std::endl;
 
             // IS THIS THREAD SAFE??
             // IS IT SAFE WITH MPI??
