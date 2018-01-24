@@ -919,6 +919,9 @@ void Runner::io_wrapper(const std::string& vname,
     write_var_to_netcdf(vname, curr_filename, starts, counts, values);
   } else {
     add_to_package_for_IO_slave(vname, curr_filename, starts, counts, values);
+    
+    // try this for starters...maybe the processes will overwrite eachother??
+    write_var_to_netcdf(vname, curr_filename, starts, counts, values);
   }
 #else
   write_var_to_netcdf(vname, curr_filename, starts, counts, values);
@@ -961,8 +964,8 @@ void Runner::add_to_package_for_IO_slave(const std::string vname,
                                          const std::vector<size_t> starts, 
                                          const std::vector<size_t> counts, 
                                          const T& values) {
-  std::cout << "NO REALLY AM I HERE!!?!?!?!?!?!\n";
-  BOOST_LOG_SEV(glg, fatal) << "AM I REALLY HERE!?!?!?";                                 
+  //std::cout << "STUB!!!\n";
+  BOOST_LOG_SEV(glg, debug) << "STUB for add add_to_package_for_IO_slave(...)";                                 
 }
 
 void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, int year, int month, std::string stage){
