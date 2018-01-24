@@ -999,6 +999,15 @@ void Runner::write_var_to_netcdf(const std::string& vname,
 
 }
 
+template<typename T>
+void Runner::add_to_package_for_IO_slave(const std::string vname, 
+                                         const std::string curr_filename,
+                                         const std::vector<size_t> starts, 
+                                         const std::vector<size_t> counts, 
+                                         const T& values) {
+  std::cout << "NO REALLY AM I HERE!!?!?!?!?!?!\n";
+  BOOST_LOG_SEV(glg, fatal) << "AM I REALLY HERE!?!?!?";                                 
+}
 
 void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, int year, int month, std::string stage){
   int month_timestep = year*12 + month;
