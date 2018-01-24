@@ -286,18 +286,31 @@ int main(int argc, char* argv[]){
 #ifdef WITHMPI
 
     MPI_Barrier(MPI::COMM_WORLD);
-  } // End of single-process setup
-  else{
+
+    // end id=0
+  } else { 
+    // all other ids
+
     // Block all processes until process 0 has completed output
     // directory setup.
+    std::cout << "WAITING FOR SETUP!\n";
     MPI_Barrier(MPI::COMM_WORLD);
-  }
+
+
+    // Setup MPI Recieve call??
+  } 
+
 #else
-  } // Nothing to do; only one process, id will equal 0.
+
+  } // end of single process setup
+
 #endif
 
 
 
+  
+
+  // THIS ONLY NEEDS TO BE DONE BY RANK 0, BUT NOT SURE HOW TO HANDLE THE exit()...
   // Work on checking that the particular configuration will not result in too
   // much output.
   OutputEstimate oe = OutputEstimate(modeldata, args->get_cal_mode());
@@ -323,6 +336,7 @@ int main(int argc, char* argv[]){
       exit(-1);
     }
   }
+
 
   if (args->get_loop_order() == "space-major") {
 
@@ -427,15 +441,11 @@ int main(int argc, char* argv[]){
           BOOST_LOG_SEV(glg, fatal) << "Skipping cell (" << rowidx << ", " << colidx << ")";
           write_status(run_status_fname, rowidx, colidx, 0);
         }
- 
-#ifdef WITHMPI
-    }
-    MPI_Finalize();
-
-#else
       }//end col loop
     }//end row loop
-
+ 
+#ifdef WITHMPI
+    MPI_Finalize();
 #endif
  
   } else if (args->get_loop_order() == "time-major") {
