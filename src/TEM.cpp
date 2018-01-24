@@ -291,20 +291,6 @@ int main(int argc, char* argv[]){
 
 #ifdef WITHMPI
 
-    // NO need for this - we already have called MPI_Init http://www.boost.org/doc/libs/1_64_0/doc/html/boost/mpi/environment.html
-    //boost::mpi::environment env; 
-    if ( !(boost::mpi::environment::initialized) ) {
-      std::cout << "ERROR?? MPI environment not initialized??\n";
-      throw std::runtime_error(std::string("Failed: ERROR?? MPI environment not initialized??\n "));
-    }
-
-    boost::mpi::communicator world;
-
-    std::cout << "BROADCASTING OUTPUT SPEC!\n";
-    boost::mpi::broadcast(world, modeldata.yearly_netcdf_outputs, 0);
-    boost::mpi::broadcast(world, modeldata.monthly_netcdf_outputs, 0);
-    boost::mpi::broadcast(world, modeldata.daily_netcdf_outputs, 0);
-
     MPI_Barrier(MPI::COMM_WORLD);
 
     // end id=0
@@ -327,8 +313,24 @@ int main(int argc, char* argv[]){
 #endif
 
 
+#ifdef WITHMPI
+  // All together now....
 
-  
+  // NO need for this - we already have called MPI_Init http://www.boost.org/doc/libs/1_64_0/doc/html/boost/mpi/environment.html
+  //boost::mpi::environment env; 
+  if ( !(boost::mpi::environment::initialized) ) {
+    std::cout << "ERROR?? MPI environment not initialized??\n";
+    throw std::runtime_error(std::string("Failed: ERROR?? MPI environment not initialized??\n "));
+  }
+
+  boost::mpi::communicator world;
+
+  std::cout << "BROADCASTING OUTPUT SPEC!\n";
+  boost::mpi::broadcast(world, modeldata.yearly_netcdf_outputs, 0);
+  boost::mpi::broadcast(world, modeldata.monthly_netcdf_outputs, 0);
+  boost::mpi::broadcast(world, modeldata.daily_netcdf_outputs, 0);
+
+#endif
 
   // THIS ONLY NEEDS TO BE DONE BY RANK 0, BUT NOT SURE HOW TO HANDLE THE exit()...
   // Work on checking that the particular configuration will not result in too
