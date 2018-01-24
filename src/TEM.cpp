@@ -46,12 +46,15 @@
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
 
+
 #include <json/value.h>
 
 #include <omp.h>
 
 #ifdef WITHMPI
 #include <mpi.h>
+#include <boost/mpi.hpp>
+#include <boost/serialization/map.hpp>
 #include "../include/RestartData.h" // for defining MPI typemap...
 //#include "../include/tbc_mpi_constants.h"
 #endif
@@ -215,9 +218,12 @@ int main(int argc, char* argv[]){
 
   int id = MPI::COMM_WORLD.Get_rank();
   int ntasks = MPI::COMM_WORLD.Get_size();
+
 #else
-  //
+
   int id = 0;
+  int ntasks = 1;
+
 #endif
 
   // Limit output directory and file setup to a single process.
@@ -303,6 +309,20 @@ int main(int argc, char* argv[]){
     }
 
 #ifdef WITHMPI
+
+    // NO need for this - we already have called MPI_Init http://www.boost.org/doc/libs/1_64_0/doc/html/boost/mpi/environment.html
+    //boost::mpi::environment env; 
+    if ( !(boost::mpi::environment::initialized) ) {
+      std::cout << "ERROR?? MPI environment not initialized??\n";
+      throw std::runtime_error(std::string("Failed: ERROR?? MPI environment not initialized??\n "));
+    }
+
+    boost::mpi::communicator world;
+
+    std::cout << "BROADCASTING OUTPUT SPEC!\n";
+    boost::mpi::broadcast(world, modeldata.yearly_netcdf_outputs, 0);
+    boost::mpi::broadcast(world, modeldata.monthly_netcdf_outputs, 0);
+    boost::mpi::broadcast(world, modeldata.daily_netcdf_outputs, 0);
 
     MPI_Barrier(MPI::COMM_WORLD);
 

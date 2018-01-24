@@ -20,4 +20,26 @@ struct OutputSpec{
 };
 
 
+namespace boost {
+  namespace serialization {
+
+  template<class Archive>
+  void serialize(Archive & ar, OutputSpec & os, const unsigned int version){
+
+   ar & os.file_path;
+   ar & os.filename_prefix;
+   ar & os.dim_count;
+
+   ar & os.pft;
+   ar & os.compartment;
+   ar & os.layer;
+   ar & os.yearly;
+   ar & os.monthly;
+   ar & os.daily;
+  }
+
+  } // namespace serialization
+} // namespace boost
+ 
+
 #endif /* UTIL_STRUCTS_H_ */
