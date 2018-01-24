@@ -322,7 +322,7 @@ int main(int argc, char* argv[]){
 
 #else
 
-  } // end of single process setup
+  } // end of single (and only) process setup
 
 #endif
 
@@ -461,11 +461,13 @@ int main(int argc, char* argv[]){
           BOOST_LOG_SEV(glg, fatal) << "Skipping cell (" << rowidx << ", " << colidx << ")";
           write_status(run_status_fname, rowidx, colidx, 0);
         }
-      }//end col loop
-    }//end row loop
  
 #ifdef WITHMPI
+    } // end loop over cells (single flattened loop)
     MPI_Finalize();
+#else
+      }//end col loop
+    }//end row loop
 #endif
  
   } else if (args->get_loop_order() == "time-major") {
