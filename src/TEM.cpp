@@ -852,15 +852,17 @@ void create_empty_run_status_file(const std::string& fname,
 
   int id = MPI::COMM_WORLD.Get_rank();
   int ntasks = MPI::COMM_WORLD.Get_size();
+  BOOST_LOG_SEV(glg, debug) << "(MPI " << id << "/" << ntasks << ") Creating run_status file! \n";
+#else
+  BOOST_LOG_SEV(glg, debug) << "Opening new file with 'NC_CLOBBER'";
+#endif
 
+
+#ifdef WITHNCPAR
                             // path            c mode               mpi comm obj     mpi info netcdfid
   temutil::nc( nc_create_par(fname.c_str(), NC_CLOBBER|NC_NETCDF4|NC_MPIIO, MPI_COMM_WORLD, MPI_INFO_NULL, &ncid) );
-
-  BOOST_LOG_SEV(glg, debug) << "(MPI " << id << "/" << ntasks << ") Creating PARALLEL run_status file! \n";
-
 #else
 
-  BOOST_LOG_SEV(glg, debug) << "Opening new file with 'NC_CLOBBER'";
   temutil::nc( nc_create(fname.c_str(), NC_CLOBBER, &ncid) );
 
 #endif
@@ -917,31 +919,30 @@ void write_status(const std::string fname, int row, int col, int statusCode) {
   // These are for logging identification only.
   int id = MPI::COMM_WORLD.Get_rank();
   int ntasks = MPI::COMM_WORLD.Get_size();
+  BOOST_LOG_SEV(glg, note) << "(MPI " << id << "/" << ntasks << ") WRITING FOR PIXEL (row, col): " << row << ", " << col << "\n";
 
-  // Open dataset
+#else
+
+  BOOST_LOG_SEV(glg, note) << "WRITING FOR OUTPUT STATUS FOR (row, col): " << row << ", " << col << "\n";
+
+#endif
+
+
+#ifdef WITHNCPAR
+  // Open dataset in parallel mode
   temutil::nc( nc_open_par(fname.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
   temutil::nc( nc_inq_varid(ncid, "run_status", &statusV) );
   temutil::nc( nc_var_par_access(ncid, statusV, NC_INDEPENDENT) );
+#else 
+  // Open dataset normally (serial mode)
+  temutil::nc( nc_open(fname.c_str(), NC_WRITE, &ncid) );
+  temutil::nc( nc_inq_varid(ncid, "run_status", &statusV) );
+#endif
 
   // Write data
-  BOOST_LOG_SEV(glg, note) << "(MPI " << id << "/" << ntasks << ") WRITING FOR PIXEL (row, col): " << row << ", " << col << "\n";
   temutil::nc( nc_put_var1_int(ncid, statusV, start,  &statusCode) );
 
   /* Close the netcdf file. */
-  BOOST_LOG_SEV(glg, debug) << "(MPI " << id << "/" << ntasks << ") Closing PARALLEL file." << row << ", " << col << "\n";
-  temutil::nc( nc_close(ncid) );
-#else
-
-  // Open dataset
-  temutil::nc( nc_open(fname.c_str(), NC_WRITE, &ncid) );
-  temutil::nc( nc_inq_varid(ncid, "run_status", &statusV) );
-  
-  // Write data
-  BOOST_LOG_SEV(glg, note) << "WRITING FOR OUTPUT STATUS FOR (row, col): " << row << ", " << col << "\n";
-  temutil::nc( nc_put_var1_int(ncid, statusV, start, &statusCode) );
-
-  /* Close the netcdf file. */
   temutil::nc( nc_close(ncid) );
 
-#endif
 }
