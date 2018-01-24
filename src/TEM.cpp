@@ -222,8 +222,37 @@ int main(int argc, char* argv[]){
 
   // Limit output directory and file setup to a single process.
   // variable 'id' is artificially set to 0 if not built with MPI.
-  if(id==0){
-    BOOST_LOG_SEV(glg, info) << "Handling single-process setup";
+  if ( id == 0 ) {
+
+    BOOST_LOG_SEV(glg, info) << "---- RANK 0 (Serial and Parallel) SETUP ----";
+
+    // THIS ONLY NEEDS TO BE DONE BY RANK 0, BUT NOT SURE HOW TO HANDLE THE exit()...
+    // Work on checking that the particular configuration will not result in too
+    // much output.
+    OutputEstimate oe = OutputEstimate(modeldata, args->get_cal_mode());
+    BOOST_LOG_SEV(glg, info) << oe.estimate_as_table();
+
+    if (args->get_max_output_volume().compare("-1") == 0) {
+      // pass - nothing to do, user doesn't want to check for excessive output.
+    } else {
+
+      std::string  mxsz_s = args->get_max_output_volume();
+      double mxsz = oe.hsize2bytes(mxsz_s);
+
+      if ( !(mxsz >= 0) ) {
+        BOOST_LOG_SEV(glg, fatal) << "Invalid size specification!: " << mxsz_s;
+        exit(-1);
+      }
+
+      BOOST_LOG_SEV(glg, info) << "Estimated Total Output (bytes): " << oe.all_cells_total();
+      if ( oe.all_cells_total() > mxsz ) {
+        BOOST_LOG_SEV(glg, fatal) << oe.estimate_as_table();
+        BOOST_LOG_SEV(glg, fatal) << "TOO MUCH OUTPUT SPECIFIED! "
+                                  << "ADJUST YOUR SETTINGS AND TRY AGAIN. "
+                                  << "Or run with '--max-output-volume=-1'";
+        exit(-1);
+      }
+    }
 
     BOOST_LOG_SEV(glg, info) << "Checking for output directory: "<<modeldata.output_dir;
     boost::filesystem::path out_dir_path(modeldata.output_dir);
@@ -299,34 +328,6 @@ int main(int argc, char* argv[]){
 
 
   
-
-  // THIS ONLY NEEDS TO BE DONE BY RANK 0, BUT NOT SURE HOW TO HANDLE THE exit()...
-  // Work on checking that the particular configuration will not result in too
-  // much output.
-  OutputEstimate oe = OutputEstimate(modeldata, args->get_cal_mode());
-  BOOST_LOG_SEV(glg, info) << oe.estimate_as_table();
-
-  if (args->get_max_output_volume().compare("-1") == 0) {
-    // pass - nothing to do, user doesn't want to check for excessive output.
-  } else {
-
-    std::string  mxsz_s = args->get_max_output_volume();
-    double mxsz = oe.hsize2bytes(mxsz_s);
-
-    if ( !(mxsz >= 0) ) {
-      BOOST_LOG_SEV(glg, fatal) << "Invalid size specification!: " << mxsz_s;
-      exit(-1);
-    }
-
-    if ( oe.all_cells_total() > mxsz ) {
-      BOOST_LOG_SEV(glg, fatal) << oe.estimate_as_table();
-      BOOST_LOG_SEV(glg, fatal) << "TOO MUCH OUTPUT SPECIFIED! "
-                                << "ADJUST YOUR SETTINGS AND TRY AGAIN. "
-                                << "Or run with '--max-output-volume=-1'";
-      exit(-1);
-    }
-  }
-
 
   if (args->get_loop_order() == "space-major") {
 
@@ -406,7 +407,6 @@ int main(int argc, char* argv[]){
             advance_model(rowidx, colidx, modeldata, args->get_cal_mode(), pr_restart_fname, eq_restart_fname, sp_restart_fname, tr_restart_fname, sc_restart_fname);
 
             cell_etime = time(0);
-
             BOOST_LOG_SEV(glg, note) << "Finished cell " << rowidx << ", " << colidx << ". Writing status file...";
             std::cout << "cell " << rowidx << ", " << colidx << " complete." << difftime(cell_etime, cell_stime) << std::endl;
             write_status(run_status_fname, rowidx, colidx, 100);
