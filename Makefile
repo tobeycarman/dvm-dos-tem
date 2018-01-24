@@ -11,6 +11,13 @@ LIBS=-lnetcdf -lboost_system -lboost_filesystem \
 
 USEMPI = false
 USEOMP = false
+USENCPAR = false
+
+ifeq ($(USENCPAR),true)
+  NCPARCFLAGS = -DWITHNCPAR
+else
+  # do nothing
+endif
 
 ifeq ($(USEMPI),true)
   MPIINCLUDES = $(shell mpic++ -showme:compile)
@@ -140,7 +147,7 @@ lib: $(SOURCES)
 CFLAGS += -DGIT_SHA=\"$(GIT_SHA)\"
 
 .cpp.o:
-	$(CC) $(CFLAGS) $(MPICFLAGS) $(OMPCFLAGS) $(INCLUDES) $(MPIINCLUDES) $< -o obj/$(notdir $@)
+	$(CC) $(CFLAGS) $(NCPARCFLAGS) $(MPICFLAGS) $(OMPCFLAGS) $(INCLUDES) $(MPIINCLUDES) $< -o obj/$(notdir $@)
 
 clean:
 	rm -f $(OBJECTS) $(APPNAME) TEM.o libTEM.so* *~ obj/*
