@@ -916,6 +916,7 @@ void Runner::io_wrapper(const std::string& vname,
   int ntasks = MPI::COMM_WORLD.Get_size();
 
   if (rank == 0) {
+    //std::cout << "Normal old write...\n";
     write_var_to_netcdf(vname, curr_filename, starts, counts, values);
   } else {
     add_to_package_for_IO_slave(vname, curr_filename, starts, counts, values);
@@ -1010,65 +1011,68 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
   std::map<std::string, OutputSpec>::iterator map_itr;
 
   /*** 3D variables ***/
-  size_t start3[3];
-  //Index 0 is set later
+  std::vector<size_t> start3(3, 0);
+  // Index 0 is set later
   start3[1] = rowidx;
   start3[2] = colidx;
 
-  //For daily-level variables
-  size_t count3[3];
+  // For single value variables, an empty count vector
+  std::vector<size_t> count0;
+
+  // For daily-level variables
+  std::vector<size_t> count3(3, 0);
   count3[0] = dinm;
   count3[1] = 1;
   count3[2] = 1;
 
   /*** Soil Variables ***/
-  size_t soilstart4[4];
-  //Index 0 is set later
+  std::vector<size_t> soilstart4(4, 0);
+  // Index 0 is set later
   soilstart4[1] = 0;
   soilstart4[2] = rowidx;
   soilstart4[3] = colidx;
 
-  size_t soilcount4[4];
+  std::vector<size_t> soilcount4(4, 0);
   soilcount4[0] = 1;
   soilcount4[1] = MAX_SOI_LAY;
   soilcount4[2] = 1;
   soilcount4[3] = 1;
 
   /*** PFT variables ***/
-  size_t PFTstart4[4];
-  //Index 0 is set later
-  PFTstart4[1] = 0;//PFT
+  std::vector<size_t> PFTstart4(4, 0);
+  // Index 0 is set later
+  PFTstart4[1] = 0; // PFT
   PFTstart4[2] = rowidx;
   PFTstart4[3] = colidx;
 
-  size_t PFTcount4[4];
+  std::vector<size_t> PFTcount4(4, 0);
   PFTcount4[0] = 1;
   PFTcount4[1] = NUM_PFT;
   PFTcount4[2] = 1;
   PFTcount4[3] = 1;
 
   /*** Compartment variables ***/
-  size_t CompStart4[4];
-  //Index 0 is set later
-  CompStart4[1] = 0;//PFT compartment
+  std::vector<size_t> CompStart4(4, 0);
+  // Index 0 is set later
+  CompStart4[1] = 0; // PFT compartment
   CompStart4[2] = rowidx;
   CompStart4[3] = colidx;
 
-  size_t CompCount4[4];
+  std::vector<size_t> CompCount4(4, 0);
   CompCount4[0] = 1;
   CompCount4[1] = NUM_PFT_PART;
   CompCount4[2] = 1;
   CompCount4[3] = 1;
 
   /*** PFT and PFT compartment variables ***/
-  size_t start5[5];
-  //Index 0 is set later
-  start5[1] = 0;//PFT Compartment
-  start5[2] = 0;//PFT
+  std::vector<size_t> start5(5, 0);
+  // Index 0 is set later
+  start5[1] = 0; // PFT Compartment
+  start5[2] = 0; // PFT
   start5[3] = rowidx;
   start5[4] = colidx;
 
-  size_t count5[5];
+  std::vector<size_t> count5(5, 0);
   count5[0] = 1;
   count5[1] = NUM_PFT_PART;
   count5[2] = NUM_PFT;
@@ -1079,6 +1083,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
   map_itr = netcdf_outputs.find("ALD");
   if(map_itr != netcdf_outputs.end()){
 
+    std::string svname = map_itr->first;
     curr_spec = map_itr->second;
     curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
 
@@ -1087,13 +1092,8 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     start3[0] = year;
 
-    std::string sv("ALD");
-    std::vector<size_t> starts(start3, start3 + sizeof(start3) / sizeof(start3[0]));
-    std::vector<size_t> counts;
-    ma1dd values(boost::extents[1]);
-    values[0] = cohort.edall->y_soid.ald;
-
-    io_wrapper(sv, curr_filename, starts, counts, values);
+    std::vector<double> values(1, cohort.edall->y_soid.ald); 
+    io_wrapper(svname, curr_filename, start3, count0, values);
 
     }//end critical(outputALD)
   }//end ALD
@@ -1103,6 +1103,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
   map_itr = netcdf_outputs.find("DEEPDZ");
   if(map_itr != netcdf_outputs.end()){
 
+    std::string svname = map_itr->first;
     curr_spec = map_itr->second;
     curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
 
@@ -1120,12 +1121,8 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         currL = currL->nextl;
       }
 
-      std::string sv("DEEPDZ");
-      std::vector<size_t> starts(start3, start3 + sizeof(start3) / sizeof(start3[0]));
-      std::vector<size_t> counts;
-      ma1dd values(boost::extents[1]);
-      values[0] = deepdz;
-      io_wrapper(sv, curr_filename, starts, counts, values);
+      std::vector<double> values(1, deepdz);
+      io_wrapper(svname, curr_filename, start3, count0, values);
 
     }//end critical(outputDEEPDZ)
   }//end DEEPDZ
@@ -1134,22 +1131,19 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
   map_itr = netcdf_outputs.find("GROWEND");
   if(map_itr != netcdf_outputs.end()){
-    BOOST_LOG_SEV(glg, debug)<<"NetCDF output: GROWEND";
+
+    std::string svname = map_itr->first;
     curr_spec = map_itr->second;
     curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
 
     #pragma omp critical(outputGROWEND)
     {
-      double growend = cohort.edall->y_soid.rtdpGEoutput;
 
       start3[0] = year;
 
-      std::string sv("GROWEND");
-      std::vector<size_t> starts(start3, start3 + sizeof(start3) / sizeof(start3[0]));
-      std::vector<size_t> counts;
-      std::vector<double> values(1, growend);
+      std::vector<double> values(1, cohort.edall->y_soid.rtdpGEoutput);
 
-      io_wrapper(sv, curr_filename, starts, counts, values);
+      io_wrapper(svname, curr_filename, start3, count0, values);
 
     }//end critical(outputGROWEND)
   }//end GROWEND
@@ -5010,59 +5004,52 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
   //VEGC
   map_itr = netcdf_outputs.find("VEGC");
   if(map_itr != netcdf_outputs.end()){
-    BOOST_LOG_SEV(glg, debug)<<"NetCDF output: VEGC";
+
+    std::string svname = map_itr->first;
     curr_spec = map_itr->second;
     curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
 
     #pragma omp critical(outputVEGC)
     {
 
-      std::string sv("VEGC");
-
       //PFT and compartment
       if(curr_spec.pft && curr_spec.compartment){
-
-        std::vector<size_t> starts(start5, start5 + sizeof(start5) / sizeof(start5[0]));
-        std::vector<size_t> counts(count5, count5 + sizeof(count5) / sizeof(count5[0]));
 
         ma2dd vegc(boost::extents[NUM_PFT_PART][NUM_PFT]);
         for(int ip=0; ip<NUM_PFT; ip++){
           for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
             if(curr_spec.monthly){
-              starts[0] = month_timestep;
+              start5[0] = month_timestep;
               vegc[ipp][ip] = cohort.bd[ip].m_vegs.c[ipp];
             }
             else if(curr_spec.yearly){
-              starts[0] = year;
+              start5[0] = year;
               vegc[ipp][ip] = cohort.bd[ip].y_vegs.c[ipp];
             }
           }
         }
 
-        io_wrapper(sv, curr_filename, starts, counts, vegc);
-        //temutil::nc( nc_put_vara_double(ncid, cv, start5, count5, &vegc[0][0]) );
+        io_wrapper(svname, curr_filename, start5, count5, vegc);
 
       }
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
 
-        std::vector<size_t> startsPFT(PFTstart4, PFTstart4 + sizeof(PFTstart4) / sizeof(PFTstart4[0]));
-        std::vector<size_t> countsPFT(PFTcount4, PFTcount4 + sizeof(PFTcount4) / sizeof(PFTcount4[0]));
+        std::vector<double> vegc;
+        vegc.reserve(NUM_PFT);
 
-        ma1dd vegc(boost::extents[NUM_PFT]);
         for(int ip=0; ip<NUM_PFT; ip++){
           if(curr_spec.monthly){
-            startsPFT[0] = month_timestep;
+            PFTstart4[0] = month_timestep;
             vegc[ip] = cohort.bd[ip].m_vegs.call;
           }
           else if(curr_spec.yearly){
-            startsPFT[0] = year;
+            PFTstart4[0] = year;
             vegc[ip] = cohort.bd[ip].y_vegs.call;
           }
         }
 
-        io_wrapper(sv, curr_filename, startsPFT, countsPFT, vegc);
-        //temutil::nc( nc_put_vara_double(ncid, cv, PFTstart4, PFTcount4, &vegc[0]) );
+        io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, vegc);
       }
       //Compartment only
       else if(!curr_spec.pft && curr_spec.compartment){
@@ -5071,42 +5058,37 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         // "ecosystem wide leaf", "ecosuystem wide wood", "ecosystem wide root"s?
         // summed across PFTs?
 
-        std::vector<size_t> startsComp(CompStart4, CompStart4 + sizeof(CompStart4) / sizeof(CompStart4[0]));
-        std::vector<size_t> countsComp(CompCount4, CompCount4 + sizeof(CompCount4) / sizeof(CompCount4[0]));
+        std::vector<double> vegc(NUM_PFT_PART, 0);
 
-        ma1dd vegc(boost::extents[NUM_PFT_PART]);
-        vegc[0] = 0;
         for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
           for(int ip=0; ip<NUM_PFT; ip++){
             if(curr_spec.monthly){
-              startsComp[0] = month_timestep;
+              CompStart4[0] = month_timestep;
               vegc[ipp] += cohort.bd[ip].m_vegs.c[ipp];
             }
             else if(curr_spec.yearly){
-              startsComp[0] = year;
+              CompStart4[0] = year;
               vegc[ipp] += cohort.bd[ip].y_vegs.c[ipp];
             }
           }
         }
-        io_wrapper(sv, curr_filename, startsComp, countsComp, vegc);
-        //temutil::nc( nc_put_vara_double(ncid, cv, startsComp, countsComp, vegc) );
+
+        io_wrapper(svname, curr_filename, CompStart4, CompCount4, vegc);
       }
       //Neither PFT nor compartment
       else if(!curr_spec.pft && !curr_spec.compartment){
 
-        std::vector<size_t> starts(start3, start3 + sizeof(start3) / sizeof(start3[0]));
-        std::vector<size_t> counts;
-
-        ma1dd vegc(boost::extents[1]);
+        std::vector<double> vegc;
+        vegc.reserve(1);
         if(curr_spec.monthly){
-          starts[0] = month_timestep;
+          start3[0] = month_timestep;
           vegc[0] = cohort.bdall->m_vegs.call;
         }
         else if(curr_spec.yearly){
-          starts[0] = year;
+          start3[0] = year;
           vegc[0] = cohort.bdall->y_vegs.call;
         }
-        io_wrapper(sv, curr_filename, starts, counts, vegc);
+        io_wrapper(svname, curr_filename, start3, count0, vegc);
       }
     }//end critical(outputVEGC)
   }//end VEGC
