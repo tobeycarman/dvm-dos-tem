@@ -5426,25 +5426,17 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
   //VEGN
   map_itr = netcdf_outputs.find("VEGN");
   if(map_itr != netcdf_outputs.end()){
-    BOOST_LOG_SEV(glg, debug)<<"NetCDF output: VEGN";
+
+    std::string svname = map_itr->first;
     curr_spec = map_itr->second;
     curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
 
     #pragma omp critical(outputVEGN)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "VEGN", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "VEGN", &cv) );
-#endif
-
       //PFT and compartment
       if(curr_spec.pft && curr_spec.compartment){
 
-        double vegn[NUM_PFT_PART][NUM_PFT];
+        ma2dd vegn(boost::extents[NUM_PFT_PART][NUM_PFT]);
         for(int ip=0; ip<NUM_PFT; ip++){
           if(cohort.cd.m_veg.vegcov[ip]>0.){//only check PFTs that exist
 
@@ -5461,13 +5453,13 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
           }
         }
-
-        temutil::nc( nc_put_vara_double(ncid, cv, start5, count5, &vegn[0][0]) );
+        io_wrapper(svname, curr_filename, start5, count5, vegn);
       }
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
 
-        double vegn[NUM_PFT];
+        std::vector<double> vegn;
+        vegn.reserve(NUM_PFT);
         for(int ip=0; ip<NUM_PFT; ip++){
           if(cohort.cd.m_veg.vegcov[ip]>0.){//only check PFTs that exist
 
@@ -5482,13 +5474,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
           }
         }
-
-        temutil::nc( nc_put_vara_double(ncid, cv, PFTstart4, PFTcount4, &vegn[0]) );
+        io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, vegn);
       }
       //Compartment only
       else if(!curr_spec.pft && curr_spec.compartment){
 
-        double vegn[NUM_PFT_PART] = {0};
+        std::vector<double> vegn(NUM_PFT_PART, 0);
         for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
           for(int ip=0; ip<NUM_PFT; ip++){
             if(cohort.cd.m_veg.vegcov[ip]>0.){//only check PFTs that exist
@@ -5505,8 +5496,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
             }
           }
         }
-
-        temutil::nc( nc_put_vara_double(ncid, cv, CompStart4, CompCount4, &vegn[0]) );
+        io_wrapper(svname, curr_filename, CompStart4, CompCount4, vegn);
       }
       //Neither PFT nor compartment
       else if(!curr_spec.pft && !curr_spec.compartment){
@@ -5520,11 +5510,10 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           start3[0] = year;
           vegn = cohort.bdall->y_vegs.nall;
         }
-
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &vegn) );
+        std::vector<double> values(1, vegn);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
-      temutil::nc( nc_close(ncid) );
-    }//end critical(outputVEGN)
+    } //end critical(outputVEGN)
   }//end VEGN
   map_itr = netcdf_outputs.end();
 
@@ -5534,20 +5523,13 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
   //EET
   map_itr = netcdf_outputs.find("EET");
   if(map_itr != netcdf_outputs.end()){
-    BOOST_LOG_SEV(glg, debug)<<"NetCDF output: EET";
+
+    std::string svname = map_itr->first;
     curr_spec = map_itr->second;
     curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
 
     #pragma omp critical(outputEET)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "EET", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "EET", &cv) );
-#endif
 
       //PFT
       if(curr_spec.pft){
@@ -5556,32 +5538,31 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           PFTstart4[0] = day_timestep;
           PFTcount4[0] = dinm;
 
-          double EET[dinm][NUM_PFT];
+          ma2dd EET(boost::extents[dinm][NUM_PFT]);
           for(int ip=0; ip<NUM_PFT; ip++){
             for(int id=0; id<dinm; id++){
               EET[id][ip] = cohort.ed[ip].daily_eet[id];
             }
           }
-
-          temutil::nc( nc_put_vara_double(ncid, cv, PFTstart4, PFTcount4, &EET[0][0]) );
+          io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, EET);
         }
         else if(curr_spec.monthly){
           PFTstart4[0] = month_timestep;
-          double EET[NUM_PFT];
+          std::vector<double> EET;
+          EET.reserve(NUM_PFT);
           for(int ip=0; ip<NUM_PFT; ip++){
             EET[ip] = cohort.ed[ip].m_l2a.eet;
           }
-
-          temutil::nc( nc_put_vara_double(ncid, cv, PFTstart4, PFTcount4, &EET[0]) );
+          io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, EET);
         }
         else if(curr_spec.yearly){
           PFTstart4[0] = year;
-          double EET[NUM_PFT];
+          std::vector<double> EET;
+          EET.reserve(NUM_PFT);
           for(int ip=0; ip<NUM_PFT; ip++){
             EET[ip] = cohort.ed[ip].y_l2a.eet;
           }
-
-          temutil::nc( nc_put_vara_double(ncid, cv, PFTstart4, PFTcount4, &EET[0]) );
+          io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, EET);
         }
       }
       //Not PFT. Total
@@ -5589,26 +5570,25 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
         if(curr_spec.daily){
           start3[0] = day_timestep;
-          double eet[31] = {0};
+          std::vector<double> eet(31, 0);
           for(int ii=0; ii<31; ii++){
             for(int ip=0; ip<NUM_PFT; ip++){
               eet[ii] += cohort.ed[ip].daily_eet[ii];
             }
           }
-          temutil::nc( nc_put_vara_double(ncid, cv, start3, count3, &eet[0]) );
+          io_wrapper(svname, curr_filename, start3, count3, eet);
         }
         else if(curr_spec.monthly){
           start3[0] = month_timestep;
-          double eet = cohort.edall->m_l2a.eet;
-          temutil::nc( nc_put_var1_double(ncid, cv, start3, &eet) );
+          std::vector<double> eet(1, cohort.edall->m_l2a.eet);
+          io_wrapper(svname, curr_filename, start3, count0, eet);
         }
         else if(curr_spec.yearly){
           start3[0] = year;
-          double eet = cohort.edall->y_l2a.eet;
-          temutil::nc( nc_put_var1_double(ncid, cv, start3, &eet) );
+          std::vector<double> eet(1, cohort.edall->y_l2a.eet);
+          io_wrapper(svname, curr_filename, start3, count0, eet);
         }
       }
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputEET)
   }//end EET
   map_itr = netcdf_outputs.end();
@@ -5617,54 +5597,44 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
   //PET
   map_itr = netcdf_outputs.find("PET");
   if(map_itr != netcdf_outputs.end()){
-    BOOST_LOG_SEV(glg, debug)<<"NetCDF output: PET";
+
+    std::string svname = map_itr->first;
     curr_spec = map_itr->second;
     curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
 
     #pragma omp critical(outputPET)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "PET", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "PET", &cv) );
-#endif
-
       //PFT
       if(curr_spec.pft){
 
         if(curr_spec.daily){
           PFTstart4[0] = day_timestep;
           PFTcount4[0] = dinm;
-
-          double PET[dinm][NUM_PFT];
+          ma2dd PET(boost::extents[dinm][NUM_PFT]);
           for(int ip=0; ip<NUM_PFT; ip++){
             for(int id=0; id<dinm; id++){
               PET[id][ip] = cohort.ed[ip].daily_pet[id];
             }
           }
-
-          temutil::nc( nc_put_vara_double(ncid, cv, PFTstart4, PFTcount4, &PET[0][0]) );
+          io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, PET);
         }
         else if(curr_spec.monthly){
           PFTstart4[0] = month_timestep;
-          double PET[NUM_PFT];
+          std::vector<double> PET;
+          PET.reserve(NUM_PFT);
           for(int ip=0; ip<NUM_PFT; ip++){
             PET[ip] = cohort.ed[ip].m_l2a.pet;
           }
-
-          temutil::nc( nc_put_vara_double(ncid, cv, PFTstart4, PFTcount4, &PET[0]) );
+          io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, PET);
         }
         else if(curr_spec.yearly){
           PFTstart4[0] = year;
-          double PET[NUM_PFT];
+          std::vector<double> PET;
+          PET.reserve(NUM_PFT);
           for(int ip=0; ip<NUM_PFT; ip++){
             PET[ip] = cohort.ed[ip].y_l2a.pet;
           }
-
-          temutil::nc( nc_put_vara_double(ncid, cv, PFTstart4, PFTcount4, &PET[0]) );
+          io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, PET);
         }
       }
       //Not PFT. Total
@@ -5672,27 +5642,25 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
         if(curr_spec.daily){
           start3[0] = day_timestep;
-          double pet[31] = {0};
+          std::vector<double> pet(31, 0);
           for(int ii=0; ii<31; ii++){
             for(int ip=0; ip<NUM_PFT; ip++){
               pet[ii] += cohort.ed[ip].daily_pet[ii];
             }
           }
-          temutil::nc( nc_put_vara_double(ncid, cv, start3, count3, &pet[0]) );
+          io_wrapper(svname, curr_filename, start3, count3, pet);
         }
         else if(curr_spec.monthly){
           start3[0] = month_timestep;
-          double pet = cohort.edall->m_l2a.pet;
-          temutil::nc( nc_put_var1_double(ncid, cv, start3, &pet) );
+          std::vector<double> pet(1, cohort.edall->m_l2a.pet);
+          io_wrapper(svname, curr_filename, start3, count0, pet);
         }
         else if(curr_spec.yearly){
           start3[0] = year;
-          double pet = cohort.edall->y_l2a.pet;
-          temutil::nc( nc_put_var1_double(ncid, cv, start3, &pet) );
+          std::vector<double> pet(1, cohort.edall->y_l2a.pet);
+          io_wrapper(svname, curr_filename, start3, count0, pet);
         }
       }
-
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputPET)
   }//end PET
   map_itr = netcdf_outputs.end();
