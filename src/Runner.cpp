@@ -1207,26 +1207,19 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
   map_itr = netcdf_outputs.find("GROWSTART");
   if(map_itr != netcdf_outputs.end()){
-    BOOST_LOG_SEV(glg, debug)<<"NetCDF output: GROWSTART";
+
+    std::string svname = map_itr->first;
     curr_spec = map_itr->second;
     curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
 
     #pragma omp critical(outputGROWSTART)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "GROWSTART", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "GROWSTART", &cv) );
-#endif
+
       start3[0] = year;
 
-      double growstart = cohort.edall->y_soid.rtdpGSoutput;
+      std::vector<double> growstart(1, cohort.edall->y_soid.rtdpGSoutput);
+      io_wrapper(svname, curr_filename, start3, count0, growstart);
 
-      temutil::nc( nc_put_var1_double(ncid, cv, start3, &growstart) );
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputGROWSTART)
   }//end GROWSTART
   map_itr = netcdf_outputs.end();
@@ -1234,35 +1227,28 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
   map_itr = netcdf_outputs.find("MOSSDZ");
   if(map_itr != netcdf_outputs.end()){
-    BOOST_LOG_SEV(glg, debug)<<"NetCDF output: MOSSDZ";
+
+    std::string svname = map_itr->first;
     curr_spec = map_itr->second;
     curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
 
     #pragma omp critical(outputMOSSDZ)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "MOSSDZ", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "MOSSDZ", &cv) );
-#endif
       start3[0] = year;
 
-      double mossdz = 0;
+      std::vector<double> mossdz(1, 0);
       Layer* currL = cohort.ground.toplayer;
       while(currL!=NULL){
         if(currL->isMoss){
-          mossdz += currL->dz;
+          mossdz[0] += currL->dz;
         }
         currL = currL->nextl;
       }
       //The following may never get set to anything useful?
       //y_soil.mossthick;
 
-      temutil::nc( nc_put_var1_double(ncid, cv, start3, &mossdz) );
-      temutil::nc( nc_close(ncid) );
+      io_wrapper(svname, curr_filename, start3, count0, mossdz);
+
     }//end critical(outputMOSSDZ)
   }//end MOSSDZ
   map_itr = netcdf_outputs.end();
@@ -1270,21 +1256,13 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
   map_itr = netcdf_outputs.find("ROLB");
   if(map_itr != netcdf_outputs.end()){
-    BOOST_LOG_SEV(glg, debug)<<"NetCDF output: ROLB";
+
+    std::string svname = map_itr->first;
     curr_spec = map_itr->second;
     curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
 
     #pragma omp critical(outputROLB)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "ROLB", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "ROLB", &cv) );
-#endif
-
       double rolb;
       if(curr_spec.monthly){
         start3[0] = month_timestep;
@@ -1297,8 +1275,9 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         rolb = cohort.fd->fire_soid.rolb;
       }
 
-      temutil::nc( nc_put_var1_double(ncid, cv, start3, &rolb) );
-      temutil::nc( nc_close(ncid) );
+      std::vector<double> values(1, rolb);
+      io_wrapper(svname, curr_filename, start3, count0, values);
+
     }//end critical(outputROLB)
   }//end ROLB
   map_itr = netcdf_outputs.end();
