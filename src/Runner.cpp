@@ -1230,26 +1230,15 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
   map_itr = netcdf_outputs.find("PERMAFROST");
   if(map_itr != netcdf_outputs.end()){
-    BOOST_LOG_SEV(glg, debug)<<"NetCDF output: PERMAFROST";
+    std::string svname = map_itr->first;
     curr_spec = map_itr->second;
     curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
 
     #pragma omp critical(outputPERMAFROST)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "PERMAFROST", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "PERMAFROST", &cv) );
-#endif
       start3[0] = year;
-
-      double permafrost = cohort.edall->y_soid.permafrost;
-
-      temutil::nc( nc_put_var1_double(ncid, cv, start3, &permafrost) );
-      temutil::nc( nc_close(ncid) );
+      std::vector<double> permafrost(1, cohort.edall->y_soid.permafrost);
+      io_wrapper(svname, curr_filename, start3, count0, permafrost);
     }//end critical(outputPERMAFROST)
   }//end PERMAFROST
   map_itr = netcdf_outputs.end();
@@ -1257,20 +1246,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
   map_itr = netcdf_outputs.find("SHLWDZ");
   if(map_itr != netcdf_outputs.end()){
-    BOOST_LOG_SEV(glg, debug)<<"NetCDF output: SHLWDZ";
+    std::string svname = map_itr->first;
     curr_spec = map_itr->second;
     curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
 
     #pragma omp critical(outputSHLWDZ)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "SHLWDZ", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "SHLWDZ", &cv) );
-#endif
       start3[0] = year;
 
       double shlwdz = 0;
@@ -1281,9 +1262,8 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         }
         currL = currL->nextl;
       }
-
-      temutil::nc( nc_put_var1_double(ncid, cv, start3, &shlwdz) );
-      temutil::nc( nc_close(ncid) );
+      std::vector<double> values(1, shlwdz);
+      io_wrapper(svname, curr_filename, start3, count0, values);
     }//end critical(outputSHLWDZ)
   }//end SHLWDZ
   map_itr = netcdf_outputs.end();
@@ -1291,26 +1271,15 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
   map_itr = netcdf_outputs.find("SNOWEND");
   if(map_itr != netcdf_outputs.end()){
-    BOOST_LOG_SEV(glg, debug)<<"NetCDF output: SNOWEND";
+    std::string svname = map_itr->first;
     curr_spec = map_itr->second;
     curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
 
     #pragma omp critical(outputSNOWEND)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "SNOWEND", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "SNOWEND", &cv) );
-#endif
       start3[0] = year;
-
-      double snowend = cohort.edall->y_snws.snowend;
-
-      temutil::nc( nc_put_var1_double(ncid, cv, start3, &snowend) );
-      temutil::nc( nc_close(ncid) );
+      std::vector<double> snowend(1, cohort.edall->y_snws.snowend);
+      io_wrapper(svname, curr_filename, start3, count0, snowend);
     }//end critical(outputSNOWEND)
   }//end SNOWEND
   map_itr = netcdf_outputs.end();
@@ -1318,26 +1287,16 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
   map_itr = netcdf_outputs.find("SNOWSTART");
   if(map_itr != netcdf_outputs.end()){
-    BOOST_LOG_SEV(glg, debug)<<"NetCDF output: SNOWSTART";
+    std::string svname = map_itr->first;
     curr_spec = map_itr->second;
     curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
 
     #pragma omp critical(outputSNOWSTART)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "SNOWSTART", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "SNOWSTART", &cv) );
-#endif
       start3[0] = year;
+      std::vector<double> snowstart(1, cohort.edall->y_snws.snowstart);
+      io_wrapper(svname, curr_filename, start3, count0, snowstart);
 
-      double snowstart = cohort.edall->y_snws.snowstart;
-
-      temutil::nc( nc_put_var1_double(ncid, cv, start3, &snowstart) );
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputSNOWSTART)
   }//end SNOWSTART
   map_itr = netcdf_outputs.end();
@@ -1346,26 +1305,15 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
   //Years since disturbance
   map_itr = netcdf_outputs.find("YSD");
   if(map_itr != netcdf_outputs.end()){
-    BOOST_LOG_SEV(glg, debug)<<"NetCDF output: YSD";
+    std::string svname = map_itr->first;
     curr_spec = map_itr->second;
     curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
 
     #pragma omp critical(outputYSD)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "YSD", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "YSD", &cv) );
-#endif
       start3[0] = year;
-
-      double ysd = cohort.cd.yrsdist;
-
-      temutil::nc( nc_put_var1_double(ncid, cv, start3, &ysd) );
-      temutil::nc( nc_close(ncid) );
+      std::vector<double> ysd(1, cohort.cd.yrsdist);
+      io_wrapper(svname, curr_filename, start3, count0, ysd);
     }//end critical(outputYSD)
   }//end YSD
   map_itr = netcdf_outputs.end();
@@ -1374,7 +1322,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
   /*** Two combination vars: (month, year) ***/
   map_itr = netcdf_outputs.find("BURNAIR2SOIN");
   if(map_itr != netcdf_outputs.end()){
-    BOOST_LOG_SEV(glg, debug)<<"NetCDF output: BURNAIR2SOIN";
+    std::string svname = map_itr->first;
     curr_spec = map_itr->second;
     curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
 
@@ -1394,12 +1342,8 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         }
       }
 
-      std::string sv("BURNAIR2SOIN");
-      std::vector<size_t> starts(start3, start3 + sizeof(start3) / sizeof(start3[0]));
-      std::vector<size_t> counts;
       std::vector<double> values(1, burnair2soin);
-
-      io_wrapper(sv, curr_filename, starts, counts, values);
+      io_wrapper(svname, curr_filename, start3, count0, values);
 
     }//end critical(outputBURNAIR2SOIN)
   }//end BURNAIR2SOIN
@@ -1409,20 +1353,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
   //Burn thickness
   map_itr = netcdf_outputs.find("BURNTHICK");
   if(map_itr != netcdf_outputs.end()){
-    BOOST_LOG_SEV(glg, debug)<<"NetCDF output: BURNTHICK";
+    std::string svname = map_itr->first;
     curr_spec = map_itr->second;
     curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
 
     #pragma omp critical(outputBURNTHICK)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "BURNTHICK", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "BURNTHICK", &cv) );
-#endif
 
       double burnthick;
       if(curr_spec.monthly){
@@ -1436,9 +1372,8 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           burnthick += cohort.year_fd[im].fire_soid.burnthick;
         }
       }
-
-      temutil::nc( nc_put_var1_double(ncid, cv, start3, &burnthick) );
-      temutil::nc( nc_close(ncid) );
+      std::vector<double> values(1, burnthick);
+      io_wrapper(svname, curr_filename, start3, count0, values);
     }//end critical(outputBURNTHICK)
   }//end BURNTHICK
   map_itr = netcdf_outputs.end();
