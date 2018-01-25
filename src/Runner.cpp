@@ -5095,7 +5095,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       else if(!curr_spec.pft && !curr_spec.compartment){
 
         std::vector<size_t> starts(start3, start3 + sizeof(start3) / sizeof(start3[0]));
-        std::vector<size_t> counts(count3, count3 + sizeof(count3) / sizeof(count3[0]));
+        std::vector<size_t> counts;
 
         ma1dd vegc(boost::extents[1]);
         if(curr_spec.monthly){
