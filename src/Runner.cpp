@@ -1750,12 +1750,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
         hkdeep = cohort.edall->m_soid.hkdeep;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &hkdeep) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
         hkdeep = cohort.edall->y_soid.hkdeep;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &hkdeep) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
 
       temutil::nc( nc_close(ncid) );
@@ -1824,12 +1824,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
         hkminea = cohort.edall->m_soid.hkminea;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &hkminea) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
         hkminea = cohort.edall->y_soid.hkminea;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &hkminea) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
 
       temutil::nc( nc_close(ncid) );
@@ -1864,12 +1864,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
         hkmineb = cohort.edall->m_soid.hkmineb;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &hkmineb) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
         hkmineb = cohort.edall->y_soid.hkmineb;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &hkmineb) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
 
       temutil::nc( nc_close(ncid) );
@@ -1904,12 +1904,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
         hkminec = cohort.edall->m_soid.hkminec;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &hkminec) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
         hkminec = cohort.edall->y_soid.hkminec;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &hkminec) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
 
       temutil::nc( nc_close(ncid) );
@@ -1944,12 +1944,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
         hkshlw = cohort.edall->m_soid.hkshlw;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &hkshlw) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
         hkshlw = cohort.edall->y_soid.hkshlw;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &hkshlw) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
 
       temutil::nc( nc_close(ncid) );
@@ -1989,7 +1989,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           currL = currL->nextl;
         }
 
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &snowthick) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
@@ -1999,7 +1999,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           snowthick += currL->dz;
           currL = currL->nextl;
         }
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &snowthick) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
 
       temutil::nc( nc_close(ncid) ); 
@@ -2034,11 +2034,11 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &cohort.edall->m_snws.swesum) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &cohort.edall->y_snws.swesum) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
 
       temutil::nc( nc_close(ncid) ); 
@@ -2073,12 +2073,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
         tcdeep = cohort.edall->m_soid.tcdeep;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &tcdeep) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
         tcdeep = cohort.edall->y_soid.tcdeep;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &tcdeep) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
 
       temutil::nc( nc_close(ncid) );
@@ -2146,12 +2146,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
         tcminea = cohort.edall->m_soid.tcminea;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &tcminea) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
         tcminea = cohort.edall->y_soid.tcminea;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &tcminea) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputTCMINEA)
@@ -2185,12 +2185,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
         tcmineb = cohort.edall->m_soid.tcmineb;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &tcmineb) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
         tcmineb = cohort.edall->y_soid.tcmineb;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &tcmineb) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputTCMINEB)
@@ -2224,12 +2224,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
         tcminec = cohort.edall->m_soid.tcminec;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &tcminec) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
         tcminec = cohort.edall->y_soid.tcminec;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &tcminec) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputTCMINEC)
@@ -2263,12 +2263,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
         tcshlw = cohort.edall->m_soid.tcshlw;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &tcshlw) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
         tcshlw = cohort.edall->y_soid.tcshlw;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &tcshlw) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputTCSHLW)
@@ -2302,12 +2302,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
         tdeep = cohort.edall->m_soid.tdeep;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &tdeep) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
         tdeep = cohort.edall->y_soid.tdeep;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &tdeep) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputTDEEP)
@@ -2374,12 +2374,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
         tminea = cohort.edall->m_soid.tminea;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &tminea) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
         tminea = cohort.edall->y_soid.tminea;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &tminea) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputTMINEA)
@@ -2413,12 +2413,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
         tmineb = cohort.edall->m_soid.tmineb;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &tmineb) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
         tmineb = cohort.edall->y_soid.tmineb;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &tmineb) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputTMINEB)
@@ -2452,12 +2452,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
         tminec = cohort.edall->m_soid.tminec;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &tminec) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
         tminec = cohort.edall->y_soid.tminec;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &tminec) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputTMINEC)
@@ -2491,12 +2491,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
         tshlw = cohort.edall->m_soid.tshlw;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &tshlw) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
         tshlw = cohort.edall->y_soid.tshlw;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &tshlw) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputTSHLW)
@@ -2530,12 +2530,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
         vwcdeep = cohort.edall->m_soid.vwcdeep;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &vwcdeep) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
         vwcdeep = cohort.edall->y_soid.vwcdeep;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &vwcdeep) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputVWCDEEP)
@@ -2602,12 +2602,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
         vwcminea = cohort.edall->m_soid.vwcminea;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &vwcminea) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
         vwcminea = cohort.edall->y_soid.vwcminea;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &vwcminea) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputVWCMINEA)
@@ -2641,12 +2641,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
         vwcmineb = cohort.edall->m_soid.vwcmineb;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &vwcmineb) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
         vwcmineb = cohort.edall->y_soid.vwcmineb;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &vwcmineb) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputVWCMINEB)
@@ -2680,12 +2680,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
         vwcminec = cohort.edall->m_soid.vwcminec;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &vwcminec) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
         vwcminec = cohort.edall->y_soid.vwcminec;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &vwcminec) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputVWCMINEC)
@@ -2719,12 +2719,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
         vwcshlw = cohort.edall->m_soid.vwcshlw;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &vwcshlw) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
         vwcshlw = cohort.edall->y_soid.vwcshlw;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &vwcshlw) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputVWCSHLW)
@@ -2758,12 +2758,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
         watertab = cohort.edall->m_sois.watertab;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &watertab) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
         watertab = cohort.edall->y_sois.watertab;
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &watertab) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputWATERTAB)
@@ -2918,7 +2918,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           start3[0] = year;
           avln = cohort.bdall->y_soid.avlnsum;
         }
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &avln) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputAVLN)
@@ -2962,7 +2962,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
             burnsoilC += cohort.year_fd[im].fire_soi2a.orgc;
           }
         }
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &burnsoilC) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputBURNSOIC)
@@ -3005,7 +3005,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
             burnSoilN += cohort.year_fd[im].fire_soi2a.orgn;
           }
         }
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &burnSoilN) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
 
       temutil::nc( nc_close(ncid) );
@@ -3059,7 +3059,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           /*** STUB ***/
         }
 
-        //temutil::nc( nc_put_var1_double(ncid, cv, start3, &ndrain) );
+        //io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
 
       temutil::nc( nc_close(ncid) );
@@ -3115,7 +3115,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           netnmin = cohort.bdall->y_soi2soi.netnminsum;
         }
 
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &netnmin) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputNETNMIN)
@@ -3169,7 +3169,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           nimmob = cohort.bdall->y_soi2soi.nimmobsum;
         }
 
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &nimmob) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
 
       temutil::nc( nc_close(ncid) );
@@ -3211,7 +3211,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           ninput = cohort.bdall->y_a2soi.avlninput;
         }
 
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &ninput) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
 
       temutil::nc( nc_close(ncid) );
@@ -3251,7 +3251,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
    
       }
 
-      temutil::nc( nc_put_var1_double(ncid, cv, start3, &nlost) );
+      io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       temutil::nc( nc_close(ncid) );
     }//end critical(outputNLOST)
   }//end NLOST
@@ -3309,7 +3309,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           orgn = cohort.bdall->y_soid.orgnsum;
         }
 
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &orgn) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputORGN)
@@ -3371,7 +3371,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           rh = cohort.bdall->y_soi2a.rhtot;
         }
 
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &rh) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
 
       temutil::nc( nc_close(ncid) );
@@ -3431,7 +3431,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           soilc = cohort.bdall->y_soid.rawcsum;
         }
 
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &soilc) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputSOC)
@@ -3468,7 +3468,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         burnveg2airc = cohort.fd->fire_v2a.orgc;
       }
 
-      temutil::nc( nc_put_var1_double(ncid, cv, start3, &burnveg2airc) );
+      io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
 
       temutil::nc( nc_close(ncid) );
     }//end critical(outputBURNVEG2AIRC)
@@ -3504,7 +3504,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         burnveg2airn = cohort.fd->fire_v2a.orgn;
       }
 
-      temutil::nc( nc_put_var1_double(ncid, cv, start3, &burnveg2airn) );
+      io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
 
       temutil::nc( nc_close(ncid) );
     }//end critical(outputBURNVEG2AIRN)
@@ -3540,7 +3540,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         burnveg2deadc = cohort.fd->fire_v2dead.vegC;
       }
 
-      temutil::nc( nc_put_var1_double(ncid, cv, start3, &burnveg2deadc) );
+      io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
 
       temutil::nc( nc_close(ncid) );
     }//end critical(outputBURNVEG2DEADC)
@@ -3576,7 +3576,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         burnveg2deadn = cohort.fd->fire_v2dead.strN;
       }
 
-      temutil::nc( nc_put_var1_double(ncid, cv, start3, &burnveg2deadn) );
+      io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
 
       temutil::nc( nc_close(ncid) );
     }//end critical(outputBURNVEG2DEADN)
@@ -3612,7 +3612,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         burnveg2soiabvc = cohort.fd->fire_v2soi.abvc;
       }
 
-      temutil::nc( nc_put_var1_double(ncid, cv, start3, &burnveg2soiabvc) );
+      io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
 
       temutil::nc( nc_close(ncid) );
     }//end critical(outputBURNVEG2SOIABVC)
@@ -3648,7 +3648,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         burnveg2soiabvn = cohort.fd->fire_v2soi.abvn;
       }
 
-      temutil::nc( nc_put_var1_double(ncid, cv, start3, &burnveg2soiabvn) );
+      io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
 
       temutil::nc( nc_close(ncid) );
     }//end critical(outputBURNVEG2SOIABVN)
@@ -3684,7 +3684,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         burnveg2soiblwc = cohort.fd->fire_v2soi.blwc;
       }
 
-      temutil::nc( nc_put_var1_double(ncid, cv, start3, &burnveg2soiblwc) );
+      io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
 
       temutil::nc( nc_close(ncid) );
     }//end critical(outputBURNVEG2SOIBLWC)
@@ -3720,7 +3720,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         burnveg2soiblwn = cohort.fd->fire_v2soi.blwn;
       }
 
-      temutil::nc( nc_put_var1_double(ncid, cv, start3, &burnveg2soiblwn) );
+      io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
 
       temutil::nc( nc_close(ncid) );
     }//end critical(outputBURNVEG2SOIBLWN)
@@ -3817,7 +3817,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           gpp = cohort.bdall->y_a2v.gppall;
         }
 
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &gpp) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputGPP)
@@ -3914,7 +3914,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           ingpp = cohort.bdall->y_a2v.ingppall;
         }
 
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &ingpp) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputINGPP)
@@ -4011,7 +4011,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           innpp = cohort.bdall->y_a2v.innppall;
         }
 
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &innpp) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputINNPP)
@@ -4066,7 +4066,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
             lai += cohort.cd.y_veg.lai[ip];
           }
         }
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &lai) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputLAI)
@@ -4165,7 +4165,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
             ltrfalc += cohort.bd[ip].y_v2soi.ltrfalcall;
           }
         }
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &ltrfalc) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputLTRFALC)
@@ -4264,7 +4264,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
             ltrfaln += cohort.bd[ip].y_v2soi.ltrfalnall;
           }
         }
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &ltrfaln) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputLTRFALN)
@@ -4368,7 +4368,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           npp = cohort.bdall->y_a2v.nppall;
         }
 
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &npp) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
       temutil::nc( nc_close(ncid) );
     }//end critical(outputNPP)
@@ -4436,7 +4436,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           start3[0] = year;
           innuptake = cohort.bdall->y_soi2v.innuptake;
         }
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &innuptake) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
 
       temutil::nc( nc_close(ncid) );
@@ -4505,7 +4505,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           start3[0] = year;
           labnuptake = cohort.bdall->y_soi2v.lnuptake;
         }
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &labnuptake) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
 
       temutil::nc( nc_close(ncid) );
@@ -4600,7 +4600,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           start3[0] = year;
           snuptakeall = cohort.bdall->y_soi2v.snuptakeall;
         }
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &snuptakeall) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
 
       temutil::nc( nc_close(ncid) );
@@ -4695,7 +4695,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           rg = cohort.bdall->y_v2a.rgall;
         }
 
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &rg) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
 
       temutil::nc( nc_close(ncid) );
@@ -4791,7 +4791,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           rm = cohort.bdall->y_v2a.rmall;
         }
 
-        temutil::nc( nc_put_var1_double(ncid, cv, start3, &rm) );
+        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
       }
 
       temutil::nc( nc_close(ncid) );
