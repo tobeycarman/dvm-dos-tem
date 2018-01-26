@@ -1784,32 +1784,27 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputHKDEEP)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "HKDEEP", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "HKDEEP", &cv) );
-#endif
-
-      double hkdeep;
-      if(curr_spec.daily){
+      if(curr_spec.daily){      
         start3[0] = day_timestep; 
-        io_wrapper(svname, curr_filename, start3, count3, FIXTHIS-->&cohort.edall->daily_hkdeep[0]) );
+        std::vector<double> values;
+        values.reserve(dinm);
+        for (int id=0; id<dinm; id++) {
+          values[id] = cohort.edall->daily_hkdeep[id];
+        } 
+        io_wrapper(svname, curr_filename, start3, count3, values);
       }
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
-        hkdeep = cohort.edall->m_soid.hkdeep;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->m_soid.hkdeep);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
-        hkdeep = cohort.edall->y_soid.hkdeep;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->y_soid.hkdeep);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
 
-      temutil::nc( nc_close(ncid) );
+
     }//end critical(outputHKDEEP)
   }//end HKDEEP 
   map_itr = netcdf_outputs.end();
@@ -1824,27 +1819,23 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputHKLAYER)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "HKLAYER", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "HKLAYER", &cv) );
-#endif
+      std::vector<double> values;
+      values.reserve(MAX_SOI_LAY);
 
-      if(curr_spec.monthly){
-        soilstart4[0] = month_timestep;
-        io_wrapper(svname, curr_filename, soilstart4, soilcount4, FIXTHIS-->&cohort.edall->m_soid.hcond[0]) );
-      }
-      else if(curr_spec.yearly){
-        soilstart4[0] = year;
-        io_wrapper(svname, curr_filename, soilstart4, soilcount4, FIXTHIS-->&cohort.edall->y_soid.hcond[0]) );
+      for(int il=0; il<MAX_SOI_LAY; il++){
+        if(curr_spec.monthly){
+          soilstart4[0] = month_timestep;
+          values[il] = cohort.edall->m_soid.hcond[il];
+        }
+        else if(curr_spec.yearly){
+          soilstart4[0] = year;
+            values[il] = cohort.edall->y_soid.hcond[il];
+        }
       }
 
-      temutil::nc( nc_close(ncid) );
+      io_wrapper(svname, curr_filename, soilstart4, soilcount4, values);
+
     }//end critical(outputHKLAYER)
-
   }//end HKLAYER
   map_itr = netcdf_outputs.end();
 
@@ -1858,32 +1849,25 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputHKMINEA)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "HKMINEA", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "HKMINEA", &cv) );
-#endif
-
-      double hkminea;
       if(curr_spec.daily){
-        start3[0] = day_timestep; 
-        io_wrapper(svname, curr_filename, start3, count3, FIXTHIS-->&cohort.edall->daily_hkminea[0]) );
+        start3[0] = day_timestep;
+        std::vector<double> values;
+        values.reserve(dinm);
+        for (int id=0; id<dinm; id++) {
+          values[id] = cohort.edall->daily_hkminea[id];
+        } 
+        io_wrapper(svname, curr_filename, start3, count3, values);
       }
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
-        hkminea = cohort.edall->m_soid.hkminea;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->m_soid.hkminea);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
-        hkminea = cohort.edall->y_soid.hkminea;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->y_soid.hkminea);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
-
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputHKMINEA)
   }//end HKMINEA
   map_itr = netcdf_outputs.end();
@@ -1898,32 +1882,25 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputHKMINEB)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "HKMINEB", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "HKMINEB", &cv) );
-#endif
-
-      double hkmineb;
       if(curr_spec.daily){
-        start3[0] = day_timestep; 
-        io_wrapper(svname, curr_filename, start3, count3, FIXTHIS-->&cohort.edall->daily_hkmineb[0]) );
+        start3[0] = day_timestep;
+        std::vector<double> values;
+        values.reserve(dinm);
+        for (int id=0; id<dinm; id++) {
+          values[id] = cohort.edall->daily_hkmineb[id];
+        } 
+        io_wrapper(svname, curr_filename, start3, count3, values);
       }
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
-        hkmineb = cohort.edall->m_soid.hkmineb;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->m_soid.hkmineb);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
-        hkmineb = cohort.edall->y_soid.hkmineb;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->y_soid.hkmineb);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
-
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputHKMINEB)
   }//end HKMINEB
   map_itr = netcdf_outputs.end();
@@ -1938,32 +1915,26 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputHKMINEC)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "HKMINEC", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "HKMINEC", &cv) );
-#endif
-
       double hkminec;
       if(curr_spec.daily){
         start3[0] = day_timestep; 
-        io_wrapper(svname, curr_filename, start3, count3, FIXTHIS-->&cohort.edall->daily_hkminec[0]) );
+        std::vector<double> values;
+        values.reserve(dinm);
+        for (int id=0; id<dinm; id++) {
+          values[id] = cohort.edall->daily_hkminec[id];
+        } 
+        io_wrapper(svname, curr_filename, start3, count3, values);
       }
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
-        hkminec = cohort.edall->m_soid.hkminec;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->m_soid.hkminec);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
-        hkminec = cohort.edall->y_soid.hkminec;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->y_soid.hkminec);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
-
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputHKMINEC)
   }//end HKMINEC
   map_itr = netcdf_outputs.end();
