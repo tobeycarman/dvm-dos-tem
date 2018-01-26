@@ -2217,31 +2217,26 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputTCSHLW)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TCSHLW", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TCSHLW", &cv) );
-#endif
-
-      double tcshlw;
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        io_wrapper(svname, curr_filename, start3, count3, FIXTHIS-->&cohort.edall->daily_tcshlw[0]) );
+        std::vector<double> values;
+        values.reserve(dinm);
+        for (int id=0; id<dinm; id++) {
+          values[id] = cohort.edall->daily_tcshlw[id];
+        } 
+        io_wrapper(svname, curr_filename, start3, count3, values);
       }
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
-        tcshlw = cohort.edall->m_soid.tcshlw;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> tcshlw(1, cohort.edall->m_soid.tcshlw);
+        io_wrapper(svname, curr_filename, start3, count0, tcshlw);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
-        tcshlw = cohort.edall->y_soid.tcshlw;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> tcshlw(1, cohort.edall->y_soid.tcshlw);
+        io_wrapper(svname, curr_filename, start3, count0, tcshlw);
       }
-      temutil::nc( nc_close(ncid) );
+      
     }//end critical(outputTCSHLW)
   }//end TCSHLW
   map_itr = netcdf_outputs.end();
@@ -2256,31 +2251,27 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputTDEEP)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TDEEP", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TDEEP", &cv) );
-#endif
-
       double tdeep;
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        io_wrapper(svname, curr_filename, start3, count3, FIXTHIS-->&cohort.edall->daily_tdeep[0]) );
+        std::vector<double> values;
+        values.reserve(dinm);
+        for (int id=0; id<dinm; id++) {
+          values[id] = cohort.edall->daily_tdeep[id];
+        } 
+        io_wrapper(svname, curr_filename, start3, count3, values);
       }
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
-        tdeep = cohort.edall->m_soid.tdeep;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> tdeep(1, cohort.edall->m_soid.tdeep);
+        io_wrapper(svname, curr_filename, start3, count0, tdeep);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
-        tdeep = cohort.edall->y_soid.tdeep;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> tdeep(1, cohort.edall->y_soid.tdeep);
+        io_wrapper(svname, curr_filename, start3, count0, tdeep);
       }
-      temutil::nc( nc_close(ncid) );
+      
     }//end critical(outputTDEEP)
   }//end TDEEP
   map_itr = netcdf_outputs.end();
@@ -3296,18 +3287,10 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputRH)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "RH", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "RH", &cv) );
-#endif
-
       if(curr_spec.layer){
 
-        double rh[MAX_SOI_LAY];
+        std::vector<double> rh;
+        rh.reserve(MAX_SOI_LAY);
         if(curr_spec.monthly){
           soilstart4[0] = month_timestep;
           for(int il=0; il<MAX_SOI_LAY; il++){
@@ -3327,7 +3310,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           }
         }
 
-        io_wrapper(svname, curr_filename, soilstart4, soilcount4, FIXTHIS-->&rh[0]) );
+        io_wrapper(svname, curr_filename, soilstart4, soilcount4, rh);
       }
 
       else if(!curr_spec.layer){
@@ -3341,11 +3324,11 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           start3[0] = year;
           rh = cohort.bdall->y_soi2a.rhtot;
         }
-
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, rh);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
 
-      temutil::nc( nc_close(ncid) );
+      
     }//end critical(outputRH)
   }//end RH 
   map_itr = netcdf_outputs.end();
@@ -3360,15 +3343,6 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputSOC)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "SOC", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "SOC", &cv) );
-#endif
-
       if(curr_spec.layer){
 
         if(curr_spec.monthly){
@@ -3378,7 +3352,8 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           soilstart4[0] = year;
         }
 
-        double soilc[MAX_SOI_LAY];
+        std::vector<double> soilc;
+        soilc.reserve(MAX_SOI_LAY);
         int il = 0;
         Layer* currL = this->cohort.ground.toplayer;
         while(currL != NULL){
@@ -3387,7 +3362,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           currL = currL->nextl;
         }
 
-        io_wrapper(svname, curr_filename, soilstart4, soilcount4, FIXTHIS-->&soilc[0]) );
+        io_wrapper(svname, curr_filename, soilstart4, soilcount4, soilc);
       }
       //Total, instead of by layer
       else if(!curr_spec.layer){
@@ -3401,10 +3376,10 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           start3[0] = year;
           soilc = cohort.bdall->y_soid.rawcsum;
         }
-
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, soilc);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
-      temutil::nc( nc_close(ncid) );
+      
     }//end critical(outputSOC)
   }//end SOC
   map_itr = netcdf_outputs.end();
@@ -3708,19 +3683,10 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputGPP)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "GPP", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "GPP", &cv) );
-#endif
-
       //PFT and compartment
       if(curr_spec.pft && curr_spec.compartment){
 
-        double gpp[NUM_PFT_PART][NUM_PFT];
+        ma2dd gpp(boost::extents[NUM_PFT_PART][NUM_PFT]);
         for(int ip=0; ip<NUM_PFT; ip++){
           for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
 
@@ -3735,12 +3701,13 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           }
         }
 
-        io_wrapper(svname, curr_filename, start5, count5, FIXTHIS-->&gpp[0][0]) );
+        io_wrapper(svname, curr_filename, start5, count5, gpp);
       }
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
 
-        double gpp[NUM_PFT];
+        std::vector<double> gpp;
+        gpp.reserve(NUM_PFT);
         for(int ip=0; ip<NUM_PFT; ip++){
 
           if(curr_spec.monthly){
@@ -3753,12 +3720,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           }
         }
 
-        io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, FIXTHIS-->&gpp[0]) );
+        io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, gpp);
       }
       //Compartment only
       else if(!curr_spec.pft && curr_spec.compartment){
 
-        double gpp[NUM_PFT_PART] = {0};
+        std::vector<double> gpp(NUM_PFT_PART, 0);
         for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
           for(int ip=0; ip<NUM_PFT; ip++){
 
@@ -3773,7 +3740,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           }
         }
 
-        io_wrapper(svname, curr_filename, CompStart4, CompCount4, FIXTHIS-->&gpp[0]) );
+        io_wrapper(svname, curr_filename, CompStart4, CompCount4, gpp);
       }
       //Neither PFT nor Compartment - total instead
       else if(!curr_spec.pft && !curr_spec.compartment){
@@ -3787,10 +3754,10 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           start3[0] = year;
           gpp = cohort.bdall->y_a2v.gppall;
         }
-
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, gpp);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
-      temutil::nc( nc_close(ncid) );
+      
     }//end critical(outputGPP)
   }//end GPP
   map_itr = netcdf_outputs.end();
@@ -4252,19 +4219,10 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputNPP)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "NPP", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "NPP", &cv) );
-#endif
-
       //PFT and compartment
       if(curr_spec.pft && curr_spec.compartment){
 
-        double npp[NUM_PFT_PART][NUM_PFT];
+        ma2dd npp(boost::extents[NUM_PFT_PART][NUM_PFT]);
         if(curr_spec.monthly){
           start5[0] = month_timestep;
           for(int ip=0; ip<NUM_PFT; ip++){
@@ -4282,12 +4240,13 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           }
         }
 
-        io_wrapper(svname, curr_filename, start5, count5, FIXTHIS-->&npp[0][0]) );
+        io_wrapper(svname, curr_filename, start5, count5, npp);
       }
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
 
-        double npp[NUM_PFT];
+        std::vector<double> npp;
+        npp.reserve(NUM_PFT);
         if(curr_spec.monthly){
           PFTstart4[0] = month_timestep;
           for(int ip=0; ip<NUM_PFT; ip++){
@@ -4301,12 +4260,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           }
         }
 
-        io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, FIXTHIS-->&npp[0]) );
+        io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, npp);
       }
       //Compartment only
       else if(!curr_spec.pft && curr_spec.compartment){
 
-        double npp[NUM_PFT_PART] = {0};
+        std::vector<double> npp(NUM_PFT_PART, 0);
         if(curr_spec.monthly){
           CompStart4[0] = month_timestep;
           for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
@@ -4324,7 +4283,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           }
         }
 
-        io_wrapper(svname, curr_filename, CompStart4, CompCount4, FIXTHIS-->&npp[0]) );
+        io_wrapper(svname, curr_filename, CompStart4, CompCount4, npp);
       }
       //Neither PFT nor Compartment - total instead
       else if(!curr_spec.pft && !curr_spec.compartment){
@@ -4338,10 +4297,10 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           start3[0] = year;
           npp = cohort.bdall->y_a2v.nppall;
         }
-
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, npp);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
-      temutil::nc( nc_close(ncid) );
+      
     }//end critical(outputNPP)
   }//end NPP
   map_itr = netcdf_outputs.end();
@@ -4356,15 +4315,6 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputNUPTAKEIN)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "NUPTAKEIN", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "NUPTAKEIN", &cv) );
-#endif
-
       //PFT and compartment
       if(curr_spec.pft && curr_spec.compartment){
         /*** STUB ***/
@@ -4373,7 +4323,9 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       }
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
-        double innuptake[NUM_PFT];
+        
+        std::vector<double> innuptake;
+        innuptake.reserve(NUM_PFT);
 
         if(curr_spec.monthly){
           PFTstart4[0] = month_timestep;
@@ -4389,7 +4341,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
             innuptake[ip] = cohort.bd[ip].y_soi2v.innuptake;
           }
         }
-        io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, FIXTHIS-->&innuptake[0]) );
+        io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, innuptake);
       }
       //Compartment only
       else if(!curr_spec.pft && curr_spec.compartment){
@@ -4398,7 +4350,6 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //Neither PFT nor compartment
       else if(!curr_spec.pft && !curr_spec.compartment){
         double innuptake = 0;
-
         if(curr_spec.monthly){
           start3[0] = month_timestep;
           innuptake = cohort.bdall->m_soi2v.innuptake;
@@ -4407,10 +4358,11 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           start3[0] = year;
           innuptake = cohort.bdall->y_soi2v.innuptake;
         }
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, innuptake);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
 
-      temutil::nc( nc_close(ncid) );
+      
     }//end critical(outputNUPTAKEIN)
   }//end NUPTAKEIN
   map_itr = netcdf_outputs.end();
@@ -4425,15 +4377,6 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputNUPTAKELAB)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "NUPTAKELAB", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "NUPTAKELAB", &cv) );
-#endif
-
       //PFT and compartment
       if(curr_spec.pft && curr_spec.compartment){
         /*** STUB ***/
@@ -4442,8 +4385,8 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       }
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
-        double labnuptake[NUM_PFT];
-
+        std::vector<double> labnuptake;
+        labnuptake.reserve(NUM_PFT);
         if(curr_spec.monthly){
           PFTstart4[0] = month_timestep;
 
@@ -4458,7 +4401,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
             labnuptake[ip] = cohort.bd[ip].y_soi2v.lnuptake;
           }
         }
-        io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, FIXTHIS-->&labnuptake[0]) );
+        io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, labnuptake);
       }
       //Compartment only
       else if(!curr_spec.pft && curr_spec.compartment){
@@ -4467,7 +4410,6 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //Neither PFT nor compartment
       else if(!curr_spec.pft && !curr_spec.compartment){
         double labnuptake = 0;
-
         if(curr_spec.monthly){
           start3[0] = month_timestep;
           labnuptake = cohort.bdall->m_soi2v.lnuptake;
@@ -4476,10 +4418,11 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           start3[0] = year;
           labnuptake = cohort.bdall->y_soi2v.lnuptake;
         }
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, labnuptake);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
 
-      temutil::nc( nc_close(ncid) );
+      
     }//end critical(outputNUPTAKELAB)
   }//end NUPTAKELAB
   map_itr = netcdf_outputs.end();
@@ -4494,19 +4437,10 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputNUPTAKEST)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "NUPTAKEST", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "NUPTAKEST", &cv) );
-#endif
-
       //PFT and compartment
       if(curr_spec.pft && curr_spec.compartment){
-        double snuptake[NUM_PFT_PART][NUM_PFT];
-
+        
+        ma2dd snuptake(boost::extents[NUM_PFT_PART][NUM_PFT]);
         for(int ip=0; ip<NUM_PFT; ip++){
           for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
             if(curr_spec.monthly){
@@ -4519,31 +4453,28 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
             }
           }
         }
-        io_wrapper(svname, curr_filename, start5, count5, FIXTHIS-->&snuptake[0][0]) );
+        io_wrapper(svname, curr_filename, start5, count5, snuptake);
       }
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
-        double snuptake[NUM_PFT] = {0};
-
+        std::vector<double> snuptake(NUM_PFT, 0);
         if(curr_spec.monthly){
           PFTstart4[0] = month_timestep;
-
           for(int ip=0; ip<NUM_PFT; ip++){
             snuptake[ip] = cohort.bd[ip].m_soi2v.snuptakeall;
           }
         }
         else if(curr_spec.yearly){
           PFTstart4[0] = year;
-
           for(int ip=0; ip<NUM_PFT; ip++){
             snuptake[ip] = cohort.bd[ip].y_soi2v.snuptakeall;
           }
         }
-        io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, FIXTHIS-->&snuptake[0]) );
+        io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, snuptake);
       }
       //Compartment only
       else if(!curr_spec.pft && curr_spec.compartment){
-        double snuptake[NUM_PFT_PART] = {0};
+        std::vector<double> snuptake(NUM_PFT_PART, 0);
         for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
           for(int ip=0; ip<NUM_PFT; ip++){
             if(curr_spec.monthly){
@@ -4556,13 +4487,11 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
             }
           }
         }
-
-        io_wrapper(svname, curr_filename, CompStart4, CompCount4, FIXTHIS-->&snuptake[0]) );
+        io_wrapper(svname, curr_filename, CompStart4, CompCount4, snuptake);
       }
       //Neither PFT nor compartment
       else if(!curr_spec.pft && !curr_spec.compartment){
-        double snuptakeall = 0;
-
+        double snuptakeall;
         if(curr_spec.monthly){
           start3[0] = month_timestep;
           snuptakeall = cohort.bdall->m_soi2v.snuptakeall;
@@ -4571,10 +4500,10 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           start3[0] = year;
           snuptakeall = cohort.bdall->y_soi2v.snuptakeall;
         }
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, snuptakeall);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
 
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputNUPTAKEST)
   }//end NUPTAKEST
   map_itr = netcdf_outputs.end();
@@ -4589,19 +4518,10 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputRG)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "RG", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "RG", &cv) );
-#endif
-
       //PFT and compartment
       if(curr_spec.pft && curr_spec.compartment){
 
-        double rg[NUM_PFT_PART][NUM_PFT];
+        ma2dd rg(boost::extents[NUM_PFT_PART][NUM_PFT]);
         for(int ip=0; ip<NUM_PFT; ip++){
           for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
             if(curr_spec.monthly){
@@ -4614,12 +4534,13 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
             }
           }
         }
-        io_wrapper(svname, curr_filename, start5, count5, FIXTHIS-->&rg[0][0]) ); 
+        io_wrapper(svname, curr_filename, start5, count5, rg); 
       }
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
 
-        double rg[NUM_PFT];
+        std::vector<double> rg;
+        rg.reserve(NUM_PFT);
         for(int ip=0; ip<NUM_PFT; ip++){
           if(curr_spec.monthly){
             PFTstart4[0] = month_timestep;
@@ -4631,12 +4552,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           }
         }
 
-        io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, FIXTHIS-->&rg[0]) ); 
+        io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, rg); 
       }
       //Compartment only
       else if(!curr_spec.pft && curr_spec.compartment){
 
-        double rg[NUM_PFT_PART] = {0};
+        std::vector<double> rg(NUM_PFT_PART, 0);
         for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
           for(int ip=0; ip<NUM_PFT; ip++){
             if(curr_spec.monthly){
@@ -4650,7 +4571,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           }
         }
 
-        io_wrapper(svname, curr_filename, CompStart4, CompCount4, FIXTHIS-->&rg[0]) );
+        io_wrapper(svname, curr_filename, CompStart4, CompCount4, rg);
    
       }
       //Neither PFT nor compartment - Total
@@ -4665,11 +4586,10 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           start3[0] = year;
           rg = cohort.bdall->y_v2a.rgall;
         }
-
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, rg);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
 
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputRG)
   }//end RG
   map_itr = netcdf_outputs.end();
@@ -4684,19 +4604,10 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputRM)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "RM", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "RM", &cv) );
-#endif
-
       //PFT and compartment
       if(curr_spec.pft && curr_spec.compartment){
 
-        double rm[NUM_PFT_PART][NUM_PFT];
+        ma2dd rm(boost::extents[NUM_PFT_PART][NUM_PFT]);
         for(int ip=0; ip<NUM_PFT; ip++){
           for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
             if(curr_spec.monthly){
@@ -4710,12 +4621,13 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           }
         }
 
-        io_wrapper(svname, curr_filename, start5, count5, FIXTHIS-->&rm[0][0]) ); 
+        io_wrapper(svname, curr_filename, start5, count5, rm); 
       }
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
 
-        double rm[NUM_PFT];
+        std::vector<double> rm;
+        rm.reserve(NUM_PFT);
         for(int ip=0; ip<NUM_PFT; ip++){
           if(curr_spec.monthly){
             PFTstart4[0] = month_timestep;
@@ -4727,12 +4639,12 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           }
         }
 
-        io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, FIXTHIS-->&rm[0]) ); 
+        io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, rm); 
       }
       //Compartment only
       else if(!curr_spec.pft && curr_spec.compartment){
 
-        double rm[NUM_PFT_PART] = {0};
+        std::vector<double> rm(NUM_PFT_PART, 0);
         for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
           for(int ip=0; ip<NUM_PFT; ip++){
             if(curr_spec.monthly){
@@ -4746,7 +4658,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           }
         }
 
-        io_wrapper(svname, curr_filename, CompStart4, CompCount4, FIXTHIS-->&rm[0]) );
+        io_wrapper(svname, curr_filename, CompStart4, CompCount4, rm);
    
       }
       //Neither PFT nor compartment - Total
