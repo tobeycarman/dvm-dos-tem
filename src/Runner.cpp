@@ -1898,32 +1898,26 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputHKSHLW)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "HKSHLW", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "HKSHLW", &cv) );
-#endif
-
       double hkshlw;
       if(curr_spec.daily){
-        start3[0] = day_timestep; 
-        io_wrapper(svname, curr_filename, start3, count3, FIXTHIS-->&cohort.edall->daily_hkshlw[0]) );
+        start3[0] = day_timestep;
+        std::vector<double> values;
+        values.reserve(dinm);
+        for(int id=0; id<dinm; id++){
+          values[id] = cohort.edall->daily_hkshlw[id];
+        }
+        io_wrapper(svname, curr_filename, start3, count3, values);
       }
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
-        hkshlw = cohort.edall->m_soid.hkshlw;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->m_soid.hkshlw);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
-        hkshlw = cohort.edall->y_soid.hkshlw;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->y_soid.hkshlw);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
-
-      temutil::nc( nc_close(ncid) );
     }
   }//end HKSHLW 
   map_itr = netcdf_outputs.end();
@@ -1938,18 +1932,14 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputSNOWTHICK)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "SNOWTHICK", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "SNOWTHICK", &cv) );
-#endif
-
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        io_wrapper(svname, curr_filename, start3, count3, FIXTHIS-->&cohort.edall->daily_snowthick[0]) );
+        std::vector<double> values;
+        values.reserve(dinm);
+        for (int id=0; id<dinm; id++) {
+          values[id] = cohort.edall->daily_snowthick[id];
+        }
+        io_wrapper(svname, curr_filename, start3, count3, values);
       }
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
@@ -1959,8 +1949,8 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           snowthick += currL->dz;
           currL = currL->nextl;
         }
-
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, snowthick);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
@@ -1970,10 +1960,9 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           snowthick += currL->dz;
           currL = currL->nextl;
         }
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, snowthick);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
-
-      temutil::nc( nc_close(ncid) ); 
     }//end critical(outputSNOWTHICK)
   }//end SNOWTHICK
   map_itr = netcdf_outputs.end();
@@ -1988,31 +1977,27 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputSWE)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "SWE", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "SWE", &cv) );
-#endif
-
-      double swe;
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        io_wrapper(svname, curr_filename, start3, count3, FIXTHIS-->&cohort.edall->daily_swesum[0]) );
+        std::vector<double> values;
+        values.reserve(dinm);
+        for (int id=0; id<dinm; id++){
+          values[id] = cohort.edall->daily_swesum[id];
+        }
+        io_wrapper(svname, curr_filename, start3, count3, values);
       }
 
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->m_snws.swesum);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->y_snws.swesum);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
 
-      temutil::nc( nc_close(ncid) ); 
     }//end critical(outputSWE)
   }//end SWE
   map_itr = netcdf_outputs.end();
@@ -2027,32 +2012,26 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputTCDEEP)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TCDEEP", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TCDEEP", &cv) );
-#endif
-
-      double tcdeep;
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        io_wrapper(svname, curr_filename, start3, count3, FIXTHIS-->&cohort.edall->daily_tcdeep[0]) );
+        std::vector<double> values;
+        values.reserve(dinm);
+        for (int id=0; id<dinm; id++) {
+          values[id] = cohort.edall->daily_tcdeep[id];
+        }
+        io_wrapper(svname, curr_filename, start3, count3, values);
       }
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
-        tcdeep = cohort.edall->m_soid.tcdeep;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->m_soid.tcdeep);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
-        tcdeep = cohort.edall->y_soid.tcdeep;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->y_soid.tcdeep);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
 
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputTCDEEP)
   }//end TCDEEP
   map_itr = netcdf_outputs.end();
@@ -2067,25 +2046,25 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputTCLAYER)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TCLAYER", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TCLAYER", &cv) );
-#endif
+
+      std::vector<double> values;
+      values.reserve(MAX_SOI_LAY);
 
       if(curr_spec.monthly){
         soilstart4[0] = month_timestep;
-        io_wrapper(svname, curr_filename, soilstart4, soilcount4, FIXTHIS-->&cohort.edall->m_soid.tcond[0]) );
+        for (int il=0; il<MAX_SOI_LAY; il++){
+          values[il] = cohort.edall->m_soid.tcond[il];
+        }
+        io_wrapper(svname, curr_filename, soilstart4, soilcount4, values);
       }
       else if(curr_spec.yearly){
         soilstart4[0] = year;
-        io_wrapper(svname, curr_filename, soilstart4, soilcount4, FIXTHIS-->&cohort.edall->y_soid.tcond[0]) );
+        for (int il=0; il<MAX_SOI_LAY; il++){
+          values[il] = cohort.edall->y_soid.tcond[il];
+        }
+        io_wrapper(svname, curr_filename, soilstart4, soilcount4, values);
       }
 
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputTCLAYER)
   }//end TCLAYER
   map_itr = netcdf_outputs.end();
@@ -2100,31 +2079,25 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputTCMINEA)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TCMINEA", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TCMINEA", &cv) );
-#endif
-
-      double tcminea;
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        io_wrapper(svname, curr_filename, start3, count3, FIXTHIS-->&cohort.edall->daily_tcminea[0]) );
+        std::vector<double> values;
+        values.reserve(dinm);
+        for (int id=0; id<dinm; id++) {
+          values[id] = cohort.edall->daily_tcminea[id];
+        }
+        io_wrapper(svname, curr_filename, start3, count3, values);
       }
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
-        tcminea = cohort.edall->m_soid.tcminea;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->m_soid.tcminea);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
-        tcminea = cohort.edall->y_soid.tcminea;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->y_soid.tcminea);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputTCMINEA)
   }//end TCMINEA
   map_itr = netcdf_outputs.end();
@@ -2139,31 +2112,26 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputTCMINEB)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TCMINEB", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TCMINEB", &cv) );
-#endif
-
       double tcmineb;
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        io_wrapper(svname, curr_filename, start3, count3, FIXTHIS-->&cohort.edall->daily_tcmineb[0]) );
+        std::vector<double> values;
+        values.reserve(dinm);
+        for (int id=0; id<dinm; id++) {
+          values[id] = cohort.edall->daily_tcmineb[id];
+        }
+        io_wrapper(svname, curr_filename, start3, count3, values);
       }
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
-        tcmineb = cohort.edall->m_soid.tcmineb;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->m_soid.tcmineb);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
-        tcmineb = cohort.edall->y_soid.tcmineb;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->y_soid.tcmineb);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputTCMINEB)
   }//end TCMINEB
   map_itr = netcdf_outputs.end();
@@ -2178,31 +2146,25 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputTCMINEC)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TCMINEC", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TCMINEC", &cv) );
-#endif
-
-      double tcminec;
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        io_wrapper(svname, curr_filename, start3, count3, FIXTHIS-->&cohort.edall->daily_tcminec[0]) );
+        std::vector<double> values;
+        values.reserve(dinm);
+        for (int id=0; id<dinm; id++) {
+          values[id] = cohort.edall->daily_tcminec[id];
+        }
+        io_wrapper(svname, curr_filename, start3, count3, values);
       }
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
-        tcminec = cohort.edall->m_soid.tcminec;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->m_soid.tcminec);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
-        tcminec = cohort.edall->y_soid.tcminec;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->y_soid.tcminec);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputTCMINEC)
   }//end TCMINEC
   map_itr = netcdf_outputs.end();
@@ -2286,25 +2248,22 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputTLAYER)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TLAYER", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TLAYER", &cv) );
-#endif
-
+      std::vector<double> values;
+      values.reserve(MAX_SOI_LAY);
       if(curr_spec.monthly){
         soilstart4[0] = month_timestep;
-        io_wrapper(svname, curr_filename, soilstart4, soilcount4, FIXTHIS-->&cohort.edall->m_sois.ts[0]) );
+        for (int il=0; il<MAX_SOI_LAY; il++) {
+          values[il] = cohort.edall->m_sois.ts[il];
+        }
+        io_wrapper(svname, curr_filename, soilstart4, soilcount4, values);
       }
       else if(curr_spec.yearly){
         soilstart4[0] = year;
-        io_wrapper(svname, curr_filename, soilstart4, soilcount4, FIXTHIS-->&cohort.edall->y_sois.ts[0]) );
+        for (int il=0; il<MAX_SOI_LAY; il++) {
+          values[il] = cohort.edall->y_sois.ts[il];
+        }
+        io_wrapper(svname, curr_filename, soilstart4, soilcount4, values);
       }
-
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputTLAYER)
   }//end TLAYER
   map_itr = netcdf_outputs.end();
@@ -2319,31 +2278,25 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputTMINEA)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TMINEA", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TMINEA", &cv) );
-#endif
-
-      double tminea;
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        io_wrapper(svname, curr_filename, start3, count3, FIXTHIS-->&cohort.edall->daily_tminea[0]) );
+        std::vector<double> values;
+        values.reserve(dinm);
+        for (int id=0; id<dinm; id++) {
+          values[id] = cohort.edall->daily_tminea[id];
+        }
+        io_wrapper(svname, curr_filename, start3, count3, values);
       }
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
-        tminea = cohort.edall->m_soid.tminea;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->m_soid.tminea);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
-        tminea = cohort.edall->y_soid.tminea;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->y_soid.tminea);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputTMINEA)
   }//end TMINEA
   map_itr = netcdf_outputs.end();
@@ -2358,31 +2311,26 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputTMINEB)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TMINEB", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TMINEB", &cv) );
-#endif
-
-      double tmineb;
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        io_wrapper(svname, curr_filename, start3, count3, FIXTHIS-->&cohort.edall->daily_tmineb[0]) );
+        std::vector<double> values;
+        values.reserve(dinm);
+        for (int id=0; id<dinm; id++) {
+          values[id] = cohort.edall->daily_tmineb[id];
+        }
+
+        io_wrapper(svname, curr_filename, start3, count3, values);
       }
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
-        tmineb = cohort.edall->m_soid.tmineb;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->m_soid.tmineb);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
-        tmineb = cohort.edall->y_soid.tmineb;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->y_soid.tmineb);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputTMINEB)
   }//end TMINEB
   map_itr = netcdf_outputs.end();
@@ -2397,31 +2345,25 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputTMINEC)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TMINEC", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TMINEC", &cv) );
-#endif
-
-      double tminec;
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        io_wrapper(svname, curr_filename, start3, count3, FIXTHIS-->&cohort.edall->daily_tminec[0]) );
+        std::vector<double> values;
+        values.reserve(dinm);
+        for (int id=0; id<dinm; id++) {
+          values[id] = cohort.edall->daily_tminec[id];
+        }
+        io_wrapper(svname, curr_filename, start3, count3, values);
       }
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
-        tminec = cohort.edall->m_soid.tminec;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->m_soid.tminec);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
-        tminec = cohort.edall->y_soid.tminec;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->y_soid.tminec);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputTMINEC)
   }//end TMINEC
   map_itr = netcdf_outputs.end();
@@ -2436,31 +2378,25 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputTSHLW)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TSHLW", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "TSHLW", &cv) );
-#endif
-
-      double tshlw;
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        io_wrapper(svname, curr_filename, start3, count3, FIXTHIS-->&cohort.edall->daily_tshlw[0]) );
+        std::vector<double> values;
+        values.reserve(dinm);
+        for (int id=0; id<dinm; id++) {
+          values[id] = cohort.edall->daily_tshlw[id];
+        }
+        io_wrapper(svname, curr_filename, start3, count3, values);
       }
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
-        tshlw = cohort.edall->m_soid.tshlw;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->m_soid.tshlw);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
-        tshlw = cohort.edall->y_soid.tshlw;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->y_soid.tshlw);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputTSHLW)
   }//end TSHLW
   map_itr = netcdf_outputs.end();
@@ -2475,31 +2411,25 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputVWCDEEP)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "VWCDEEP", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "VWCDEEP", &cv) );
-#endif
-
-      double vwcdeep;
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        io_wrapper(svname, curr_filename, start3, count3, FIXTHIS-->&cohort.edall->daily_vwcdeep[0]) );
+        std::vector<double> values;
+        values.reserve(dinm);
+        for (int id=0; id<dinm; id++) {
+          values[id] = cohort.edall->daily_vwcdeep[id];
+        }
+        io_wrapper(svname, curr_filename, start3, count3, values);
       }
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
-        vwcdeep = cohort.edall->m_soid.vwcdeep;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->m_soid.vwcdeep);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
-        vwcdeep = cohort.edall->y_soid.vwcdeep;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->y_soid.vwcdeep);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputVWCDEEP)
   }//end VWCDEEP
   map_itr = netcdf_outputs.end();
@@ -2514,25 +2444,22 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputVWCLAYER)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "VWCLAYER", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "VWCLAYER", &cv) );
-#endif
-
+      std::vector<double> values;
+      values.reserve(MAX_SOI_LAY);
       if(curr_spec.monthly){
         soilstart4[0] = month_timestep;
-        io_wrapper(svname, curr_filename, soilstart4, soilcount4, FIXTHIS-->&cohort.edall->m_soid.vwc[0]) );
+        for (int il=0; il<MAX_SOI_LAY; il++) {
+          values[il] = cohort.edall->m_soid.vwc[il];
+        }
+        io_wrapper(svname, curr_filename, soilstart4, soilcount4, values);
       }
       else if(curr_spec.yearly){
         soilstart4[0] = year;
-        io_wrapper(svname, curr_filename, soilstart4, soilcount4, FIXTHIS-->&cohort.edall->y_soid.vwc[0]) );
+        for (int il=0; il<MAX_SOI_LAY; il++) {
+          values[il] = cohort.edall->y_soid.vwc[il];
+        }
+        io_wrapper(svname, curr_filename, soilstart4, soilcount4, values);
       }
-
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputVWCLAYER)
   }//end VWCLAYER
   map_itr = netcdf_outputs.end();
@@ -2547,31 +2474,25 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputVWCMINEA)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "VWCMINEA", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "VWCMINEA", &cv) );
-#endif
-
-      double vwcminea;
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        io_wrapper(svname, curr_filename, start3, count3, FIXTHIS-->&cohort.edall->daily_vwcminea[0]) );
+        std::vector<double> values;
+        values.reserve(dinm);
+        for (int id=0; id<dinm; id++) {
+          values[id] = cohort.edall->daily_vwcminea[id];
+        }
+        io_wrapper(svname, curr_filename, start3, count3, values);
       }
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
-        vwcminea = cohort.edall->m_soid.vwcminea;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->m_soid.vwcminea);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
-        vwcminea = cohort.edall->y_soid.vwcminea;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->y_soid.vwcminea);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputVWCMINEA)
   }//end VWCMINEA
   map_itr = netcdf_outputs.end();
@@ -2586,31 +2507,25 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputVWCMINEB)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "VWCMINEB", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "VWCMINEB", &cv) );
-#endif
-
-      double vwcmineb;
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        io_wrapper(svname, curr_filename, start3, count3, FIXTHIS-->&cohort.edall->daily_vwcmineb[0]) );
+        std::vector<double> values;
+        values.reserve(dinm);
+        for (int id=0; id<dinm; id++) {
+          values[id] = cohort.edall->daily_vwcmineb[id];
+        }
+        io_wrapper(svname, curr_filename, start3, count3, values);
       }
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
-        vwcmineb = cohort.edall->m_soid.vwcmineb;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->m_soid.vwcmineb);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
-        vwcmineb = cohort.edall->y_soid.vwcmineb;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->y_soid.vwcmineb);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputVWCMINEB)
   }//end VWCMINEB
   map_itr = netcdf_outputs.end();
@@ -2625,31 +2540,25 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputVWCMINEC)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "VWCMINEC", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "VWCMINEC", &cv) );
-#endif
-
-      double vwcminec;
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        io_wrapper(svname, curr_filename, start3, count3, FIXTHIS-->&cohort.edall->daily_vwcminec[0]) );
+        std::vector<double> values;
+        values.reserve(dinm);
+        for (int id=0; id<dinm; id++) {
+          values[id] = cohort.edall->daily_vwcminec[id];
+        }
+        io_wrapper(svname, curr_filename, start3, count3, values);
       }
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
-        vwcminec = cohort.edall->m_soid.vwcminec;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->m_soid.vwcminec);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
-        vwcminec = cohort.edall->y_soid.vwcminec;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->y_soid.vwcminec);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputVWCMINEC)
   }//end VWCMINEC
   map_itr = netcdf_outputs.end();
@@ -2664,31 +2573,25 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputVWCSHLW)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "VWCSHLW", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "VWCSHLW", &cv) );
-#endif
-
-      double vwcshlw;
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        io_wrapper(svname, curr_filename, start3, count3, FIXTHIS-->&cohort.edall->daily_vwcshlw[0]) );      
+        std::vector<double> values;
+        values.reserve(dinm);
+        for (int id=0; id<dinm; id++) {
+          values[id] = cohort.edall->daily_vwcshlw[id];
+        }
+        io_wrapper(svname, curr_filename, start3, count3, values);
       }
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
-        vwcshlw = cohort.edall->m_soid.vwcshlw;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->m_soid.vwcshlw);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
-        vwcshlw = cohort.edall->y_soid.vwcshlw;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->y_soid.vwcshlw);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputVWCSHLW)
   }//end VWCSHLW
   map_itr = netcdf_outputs.end();
@@ -2703,31 +2606,26 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputWATERTAB)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "WATERTAB", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "WATERTAB", &cv) );
-#endif
-
       double watertab;
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        io_wrapper(svname, curr_filename, start3, count3, FIXTHIS-->&cohort.edall->daily_watertab[0]) );      
+        std::vector<double> values;
+        values.reserve(dinm);
+        for (int id=0; id<dinm; id++) {
+          values[id] = cohort.edall->daily_watertab[id];
+        }
+        io_wrapper(svname, curr_filename, start3, count3, values);
       }
       else if(curr_spec.monthly){
         start3[0] = month_timestep;
-        watertab = cohort.edall->m_sois.watertab;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->m_sois.watertab);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
       else if(curr_spec.yearly){
         start3[0] = year;
-        watertab = cohort.edall->y_sois.watertab;
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, cohort.edall->y_sois.watertab);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputWATERTAB)
   }//end WATERTAB
   map_itr = netcdf_outputs.end();
@@ -2743,25 +2641,22 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputLAYERDEPTH)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "LAYERDEPTH", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "LAYERDEPTH", &cv) );
-#endif
-
+      std::vector<double> values;
+      values.reserve(MAX_SOI_LAY);
       if(curr_spec.monthly){
         soilstart4[0] = month_timestep;
-        io_wrapper(svname, curr_filename, soilstart4, soilcount4, FIXTHIS-->&cohort.cd.m_soil.z[0]) );
+        for (int il=0; il<MAX_SOI_LAY; il++) {
+          values[il] = cohort.cd.m_soil.z[il];
+        }
+        io_wrapper(svname, curr_filename, soilstart4, soilcount4, values);
       }
       else if(curr_spec.yearly){
         soilstart4[0] = year;
-        io_wrapper(svname, curr_filename, soilstart4, soilcount4, FIXTHIS-->&cohort.cd.y_soil.z[0]) );
+        for (int il=0; il<MAX_SOI_LAY; il++) {
+          values[il] = cohort.cd.y_soil.z[il];
+        }
+        io_wrapper(svname, curr_filename, soilstart4, soilcount4, values);
       }
-
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputLAYERDEPTH)
   }//end LAYERDEPTH 
   map_itr = netcdf_outputs.end();
@@ -2776,25 +2671,22 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputLAYERDZ)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "LAYERDZ", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "LAYERDZ", &cv) );
-#endif
-
+      std::vector<double> values;
+      values.reserve(MAX_SOI_LAY);
       if(curr_spec.monthly){
         soilstart4[0] = month_timestep;
-        io_wrapper(svname, curr_filename, soilstart4, soilcount4, FIXTHIS-->&cohort.cd.m_soil.dz[0]) );
+        for (int il=0; il<MAX_SOI_LAY; il++) {
+          values[il] = cohort.cd.m_soil.dz[il];
+        }
+        io_wrapper(svname, curr_filename, soilstart4, soilcount4, values);
       }
       else if(curr_spec.yearly){
         soilstart4[0] = year;
-        io_wrapper(svname, curr_filename, soilstart4, soilcount4, FIXTHIS-->&cohort.cd.y_soil.dz[0]) );
+        for (int il=0; il<MAX_SOI_LAY; il++) {
+          values[il] = cohort.cd.y_soil.dz[il];
+        }
+        io_wrapper(svname, curr_filename, soilstart4, soilcount4, values);
       }
-
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputLAYERDZ)
   }//end LAYERDZ 
   map_itr = netcdf_outputs.end();
@@ -2809,25 +2701,22 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputLAYERTYPE)
     {
-#ifdef WITHNCPAR
-      temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "LAYERTYPE", &cv) );
-      temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-#else
-      temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-      temutil::nc( nc_inq_varid(ncid, "LAYERTYPE", &cv) );
-#endif
-
+      std::vector<double> values;
+      values.reserve(MAX_SOI_LAY);
       if(curr_spec.monthly){
         soilstart4[0] = month_timestep;
-        io_wrapper(svname, curr_filename, soilstart4, soilcount4, FIXTHIS-->&cohort.cd.m_soil.type[0]) );
+        for (int il=0; il<MAX_SOI_LAY; il++) {
+          values[il] = cohort.cd.m_soil.type[il];
+        }
+        io_wrapper(svname, curr_filename, soilstart4, soilcount4, values);
       }
       else if(curr_spec.yearly){
         soilstart4[0] = year;
-        io_wrapper(svname, curr_filename, soilstart4, soilcount4, FIXTHIS-->&cohort.cd.y_soil.type[0]) );
+        for (int il=0; il<MAX_SOI_LAY; il++) {
+          values[il] = cohort.cd.y_soil.type[il];
+        }
+        io_wrapper(svname, curr_filename, soilstart4, soilcount4, values);
       }
-
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputLAYERTYPE)
   }//end LAYERTYPE 
   map_itr = netcdf_outputs.end();
@@ -2867,7 +2756,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
             avln[il] = cohort.bdall->y_sois.avln[il];
           }
         }
-        io_wrapper(svname, curr_filename, soilstart4, soilcount4, FIXTHIS-->&avln[0]) );
+        io_wrapper(svname, curr_filename, soilstart4, soilcount4, avln);
       }
       else if(!curr_spec.layer){
 
@@ -2880,9 +2769,9 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           start3[0] = year;
           avln = cohort.bdall->y_soid.avlnsum;
         }
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, avln);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputAVLN)
   }//end AVLN
   map_itr = netcdf_outputs.end();
@@ -4673,8 +4562,8 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           start3[0] = year;
           rm = cohort.bdall->y_v2a.rmall;
         }
-
-        io_wrapper(svname, curr_filename, start3, count0, FIXTHIS);
+        std::vector<double> values(1, rm);
+        io_wrapper(svname, curr_filename, start3, count0, values);
       }
 
       temutil::nc( nc_close(ncid) );
