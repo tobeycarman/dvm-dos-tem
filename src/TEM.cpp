@@ -309,11 +309,13 @@ int main(int argc, char* argv[]){
     }
 
 #ifdef WITHMPI
-
     MPI_Barrier(MPI::COMM_WORLD);
+#endif
 
     // end id=0
   } else { 
+
+#ifdef WITHMPI
     // all other ids
 
     // Block all processes until process 0 has completed output
@@ -321,15 +323,11 @@ int main(int argc, char* argv[]){
     std::cout << "WAITING FOR SETUP!\n";
     MPI_Barrier(MPI::COMM_WORLD);
 
-
     // Setup MPI Recieve call??
+#endif
+
   } 
 
-#else
-
-  } // end of single (and only) process setup
-
-#endif
 
 
 #ifdef WITHMPI
