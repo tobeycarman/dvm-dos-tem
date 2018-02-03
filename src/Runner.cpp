@@ -3081,7 +3081,6 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         std::vector<double> values(1, orgn);
         io_wrapper(svname, curr_filename, start3, count0, values);
       }
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputORGN)
   }//end ORGN
   map_itr = netcdf_outputs.end();
@@ -4365,8 +4364,6 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         std::vector<double> values(1, rm);
         io_wrapper(svname, curr_filename, start3, count0, values);
       }
-
-      temutil::nc( nc_close(ncid) );
     }//end critical(outputRM)
   }//end RM
   map_itr = netcdf_outputs.end();
