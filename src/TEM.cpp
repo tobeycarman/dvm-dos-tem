@@ -227,7 +227,7 @@ int main(int argc, char* argv[]){
 #endif
 
   // Limit output directory and file setup to a single process.
-  // variable 'id' is artificially set to 0 if not built with MPI.
+  // variable 'id' is set to 0 if not built with MPI.
   if ( id == 0 ) {
 
     BOOST_LOG_SEV(glg, info) << "---- RANK 0 (Serial and Parallel) SETUP ----";
@@ -314,21 +314,18 @@ int main(int argc, char* argv[]){
 
     // end id=0
   } else { 
+    // Nothing to do here if built w/o MPI as there will only be one process.
 
 #ifdef WITHMPI
-    // all other ids
-
     // Block all processes until process 0 has completed output
     // directory setup.
     std::cout << "WAITING FOR SETUP!\n";
     MPI_Barrier(MPI::COMM_WORLD);
-
-    // Setup MPI Recieve call??
+    
+    
 #endif
 
   } 
-
-
 
 #ifdef WITHMPI
   // All together now....
@@ -347,6 +344,21 @@ int main(int argc, char* argv[]){
   boost::mpi::broadcast(world, modeldata.monthly_netcdf_outputs, 0);
   boost::mpi::broadcast(world, modeldata.daily_netcdf_outputs, 0);
 
+  if (id==0) {
+    std::cout << "MASTER PROCESS --- WAITING FOR MESSAGES FROM SLAVES...\n";
+    
+
+    while (true) {
+      boost::mpi::request reqs[2];
+      OutputDataNugget odn;
+      reqs[0] = world.irecv(boost::mpi::any_source,686,odn);
+      boost::mpi::wait_all(reqs, reqs+1);
+      std::cout << "AND THE MESSAGE IS odn.vname!: " << odn.vname << " odn.data.size()=" << odn.data.size() << "\n";    
+    }
+  } else {
+    std::cout << "slave...just keep your head down...\n";
+  }
+  
 #endif
 
   if (args->get_loop_order() == "space-major") {

@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <json/writer.h>
 
-//#include <boost/mpi.hpp>
 
 #ifdef WITHNCPAR
 #include <netcdf_par.h>
@@ -12,6 +11,10 @@
 
 #ifdef WITHMPI
 #include <mpi.h>
+#include <boost/mpi.hpp>
+#include <boost/serialization/string.hpp>
+#include <boost/serialization/vector.hpp>
+
 #endif
 
 #include "../include/Runner.h"
@@ -963,9 +966,9 @@ void Runner::io_wrapper(const std::string& vname,
     write_var_to_netcdf(vname, curr_filename, starts, counts, values);
   } else {
     add_to_package_for_IO_slave(vname, curr_filename, starts, counts, values);
-    
+    std::cout << "rank " << rank << " sending data to IO slave for " << curr_filename << "\n";
     // try this for starters...maybe the processes will overwrite eachother??
-    write_var_to_netcdf(vname, curr_filename, starts, counts, values);
+    //write_var_to_netcdf(vname, curr_filename, starts, counts, values);
   }
 #else
   write_var_to_netcdf(vname, curr_filename, starts, counts, values);
@@ -997,7 +1000,29 @@ void Runner::write_var_to_netcdf(const std::string& vname,
   BOOST_LOG_SEV(glg, debug) << "counts.size: " << counts.size() << " [" << temutil::vec2csv(counts) << "]";
   BOOST_LOG_SEV(glg, debug) << "values.size: " << values.size();// << " [" << temutil::vec2csv(counts) << "]";
 
-  if (counts.size() < 1) { // just a single variable/value
+  if ( (counts.size() == 5) && (values.size() == NUM_PFT_PART*NUM_PFT) ){
+    // For the 5D variables (time, compartment, pft, y, x) we need to 
+    // un-flatten the array, and put it to the nc file.
+    double values2[NUM_PFT_PART][NUM_PFT];
+    for (int i=0; i<NUM_PFT_PART*NUM_PFT; i++){
+      values2[i/NUM_PFT][i%NUM_PFT] = values[i];
+    }
+    temutil::nc( nc_put_vara_double(ncid, cv, &starts[0], &counts[0], &values2[0][0]) );
+
+  } else if ( (counts.size() == 4) ) {
+    int dinm = values.size() / NUM_PFT;
+    if (! (dinm == 30 || dinm == 31 || dinm == 28 || dinm == 29) ) {
+      std::cout << "!!!!!!!!!! ERROR !!!!!!!!! \n";
+    }
+    // For the 4D variables that are put in bulk to the nc file, we need to
+    // first un-flatten the array...
+    double values2[dinm][NUM_PFT];
+    for(int i=0; i < values.size(); i++) {
+      values2[i/NUM_PFT][i%NUM_PFT] = values[i];
+    }
+    temutil::nc( nc_put_vara_double(ncid, cv, &starts[0], &counts[0], &values2[0][0]) );
+
+  } else if (counts.size() < 1) { // just a single variable/value
     temutil::nc( nc_put_var1_double(ncid, cv, &starts[0], values.data()) );
   } else {       // put a bunch of values using the counts array
     temutil::nc( nc_put_vara_double(ncid, cv, &starts[0], &counts[0], values.data()) );
@@ -3813,7 +3838,8 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //PFT and compartment
       if(curr_spec.pft && curr_spec.compartment){
 
-        ma2dd gpp(boost::extents[NUM_PFT_PART][NUM_PFT]);
+        //ma2dd gpp(boost::extents[NUM_PFT_PART][NUM_PFT]);
+        double gpp[NUM_PFT_PART][NUM_PFT];
         for(int ip=0; ip<NUM_PFT; ip++){
           for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
 
@@ -3827,8 +3853,13 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
             }
           }
         }
-
-        io_wrapper(svname, curr_filename, start5, count5, gpp);
+        std::vector<double> gppF(NUM_PFT_PART*NUM_PFT, -99999);
+        for(int i = 0; i < NUM_PFT_PART; i++) {
+          for(int j = 0; j < NUM_PFT; j++) {
+            gppF[(i*NUM_PFT)+j] = gpp[i][j];
+          }
+        }
+        io_wrapper(svname, curr_filename, start5, count5, gppF);
       }
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
@@ -3902,7 +3933,8 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //PFT and compartment
       if(curr_spec.pft && curr_spec.compartment){
 
-        ma2dd ingpp(boost::extents[NUM_PFT_PART][NUM_PFT]);
+        //ma2dd ingpp(boost::extents[NUM_PFT_PART][NUM_PFT]);
+        double ingpp[NUM_PFT_PART][NUM_PFT];
         for(int ip=0; ip<NUM_PFT; ip++){
           for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
 
@@ -3916,8 +3948,13 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
             }
           }
         }
-
-        io_wrapper(svname, curr_filename, start5, count5, ingpp);
+        std::vector<double> ingppF(NUM_PFT_PART*NUM_PFT, -99999);
+        for(int i = 0; i < NUM_PFT_PART; i++) {
+          for(int j = 0; j < NUM_PFT; j++) {
+            ingppF[(i*NUM_PFT)+j] = ingpp[i][j];
+          }
+        }
+        io_wrapper(svname, curr_filename, start5, count5, ingppF);
       }
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
@@ -3990,7 +4027,8 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //PFT and compartment
       if(curr_spec.pft && curr_spec.compartment){
 
-        ma2dd innpp(boost::extents[NUM_PFT_PART][NUM_PFT]);
+        //ma2dd innpp(boost::extents[NUM_PFT_PART][NUM_PFT]);
+        double innpp[NUM_PFT_PART][NUM_PFT];
         for(int ip=0; ip<NUM_PFT; ip++){
           for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
 
@@ -4004,8 +4042,13 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
             }
           }
         }
-
-        io_wrapper(svname, curr_filename, start5, count5, innpp);
+        std::vector<double> innppF(NUM_PFT_PART*NUM_PFT, -99999);
+        for(int i = 0; i < NUM_PFT_PART; i++) {
+          for(int j = 0; j < NUM_PFT; j++) {
+            innppF[(i*NUM_PFT)+j] = innpp[i][j];
+          }
+        }
+        io_wrapper(svname, curr_filename, start5, count5, innppF);
       }
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
@@ -4134,7 +4177,8 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //PFT and compartment
       if(curr_spec.pft && curr_spec.compartment){
 
-        ma2dd ltrfalc(boost::extents[NUM_PFT_PART][NUM_PFT]);
+        //ma2dd ltrfalc(boost::extents[NUM_PFT_PART][NUM_PFT]);
+        double ltrfalc[NUM_PFT_PART][NUM_PFT];
         for(int ip=0; ip<NUM_PFT; ip++){
           for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
 
@@ -4148,8 +4192,13 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
             }
           }
         }
-
-        io_wrapper(svname, curr_filename, start5, count5, ltrfalc);
+        std::vector<double> ltrfalcF(NUM_PFT_PART*NUM_PFT, -99999);
+        for(int i = 0; i < NUM_PFT_PART; i++) {
+          for(int j = 0; j < NUM_PFT; j++) {
+            ltrfalcF[(i*NUM_PFT)+j] = ltrfalc[i][j];
+          }
+        }
+        io_wrapper(svname, curr_filename, start5, count5, ltrfalcF);
       }
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
@@ -4225,7 +4274,8 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //PFT and compartment
       if(curr_spec.pft && curr_spec.compartment){
 
-        ma2dd ltrfaln(boost::extents[NUM_PFT_PART][NUM_PFT]);
+        //ma2dd ltrfaln(boost::extents[NUM_PFT_PART][NUM_PFT]);
+        double ltrfaln[NUM_PFT_PART][NUM_PFT];
         for(int ip=0; ip<NUM_PFT; ip++){
           for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
 
@@ -4239,8 +4289,13 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
             }
           }
         }
-
-        io_wrapper(svname, curr_filename, start5, count5, ltrfaln);
+        std::vector<double> ltrfalnF(NUM_PFT_PART*NUM_PFT, -99999);
+        for(int i = 0; i < NUM_PFT_PART; i++) {
+          for(int j = 0; j < NUM_PFT; j++) {
+            ltrfalnF[(i*NUM_PFT)+j] = ltrfaln[i][j];
+          }
+        }
+        io_wrapper(svname, curr_filename, start5, count5, ltrfalnF);
       }
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
@@ -4315,7 +4370,8 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //PFT and compartment
       if(curr_spec.pft && curr_spec.compartment){
 
-        ma2dd npp(boost::extents[NUM_PFT_PART][NUM_PFT]);
+        //ma2dd npp(boost::extents[NUM_PFT_PART][NUM_PFT]);
+        double npp[NUM_PFT_PART][NUM_PFT];
         if(curr_spec.monthly){
           start5[0] = month_timestep;
           for(int ip=0; ip<NUM_PFT; ip++){
@@ -4332,8 +4388,13 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
             }
           }
         }
-
-        io_wrapper(svname, curr_filename, start5, count5, npp);
+        std::vector<double> nppF(NUM_PFT_PART*NUM_PFT, -99999);
+        for(int i = 0; i < NUM_PFT_PART; i++) {
+          for(int j = 0; j < NUM_PFT; j++) {
+            nppF[(i*NUM_PFT)+j] = npp[i][j];
+          }
+        }
+        io_wrapper(svname, curr_filename, start5, count5, nppF);
       }
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
@@ -4533,7 +4594,8 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //PFT and compartment
       if(curr_spec.pft && curr_spec.compartment){
         
-        ma2dd snuptake(boost::extents[NUM_PFT_PART][NUM_PFT]);
+        //ma2dd snuptake(boost::extents[NUM_PFT_PART][NUM_PFT]);
+        double snuptake[NUM_PFT_PART][NUM_PFT];
         for(int ip=0; ip<NUM_PFT; ip++){
           for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
             if(curr_spec.monthly){
@@ -4546,7 +4608,13 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
             }
           }
         }
-        io_wrapper(svname, curr_filename, start5, count5, snuptake);
+        std::vector<double> snuptakeF(NUM_PFT_PART*NUM_PFT, -99999);
+        for(int i = 0; i < NUM_PFT_PART; i++) {
+          for(int j = 0; j < NUM_PFT; j++) {
+            snuptakeF[(i*NUM_PFT)+j] = snuptake[i][j];
+          }
+        }
+        io_wrapper(svname, curr_filename, start5, count5, snuptakeF);
       }
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
@@ -4614,7 +4682,8 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //PFT and compartment
       if(curr_spec.pft && curr_spec.compartment){
 
-        ma2dd rg(boost::extents[NUM_PFT_PART][NUM_PFT]);
+        //ma2dd rg(boost::extents[NUM_PFT_PART][NUM_PFT]);
+        double rg[NUM_PFT_PART][NUM_PFT];
         for(int ip=0; ip<NUM_PFT; ip++){
           for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
             if(curr_spec.monthly){
@@ -4627,7 +4696,14 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
             }
           }
         }
-        io_wrapper(svname, curr_filename, start5, count5, rg); 
+        std::vector<double> rgF(NUM_PFT_PART*NUM_PFT, -99999);
+        for(int i = 0; i < NUM_PFT_PART; i++) {
+          for(int j = 0; j < NUM_PFT; j++) {
+            rgF[(i*NUM_PFT)+j] = rg[i][j];
+          }
+        }
+
+        io_wrapper(svname, curr_filename, start5, count5, rgF); 
       }
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
@@ -4700,7 +4776,8 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //PFT and compartment
       if(curr_spec.pft && curr_spec.compartment){
 
-        ma2dd rm(boost::extents[NUM_PFT_PART][NUM_PFT]);
+        //ma2dd rm(boost::extents[NUM_PFT_PART][NUM_PFT]);
+        double rm[NUM_PFT_PART][NUM_PFT];
         for(int ip=0; ip<NUM_PFT; ip++){
           for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
             if(curr_spec.monthly){
@@ -4713,8 +4790,13 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
             }
           }
         }
-
-        io_wrapper(svname, curr_filename, start5, count5, rm); 
+        std::vector<double> rmF(NUM_PFT_PART*NUM_PFT, -99999);
+        for(int i = 0; i < NUM_PFT_PART; i++) {
+          for(int j = 0; j < NUM_PFT; j++) {
+            rmF[(i*NUM_PFT)+j] = rm[i][j];
+          }
+        }
+        io_wrapper(svname, curr_filename, start5, count5, rmF); 
       }
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
@@ -4788,7 +4870,8 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //PFT and compartment
       if(curr_spec.pft && curr_spec.compartment){
 
-        ma2dd vegc(boost::extents[NUM_PFT_PART][NUM_PFT]);
+        //ma2dd vegc(boost::extents[NUM_PFT_PART][NUM_PFT]);
+        double vegc[NUM_PFT_PART][NUM_PFT];
         for(int ip=0; ip<NUM_PFT; ip++){
 
           for(int ipp=0; ipp<NUM_PFT_PART; ipp++){
@@ -4803,8 +4886,13 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
           }
         }
-
-        io_wrapper(svname, curr_filename, start5, count5, vegc);
+        std::vector<double> vegcF(NUM_PFT_PART*NUM_PFT, -99999);
+        for(int i = 0; i < NUM_PFT_PART; i++) {
+          for(int j = 0; j < NUM_PFT; j++) {
+            vegcF[(i*NUM_PFT)+j] = vegc[i][j];
+          }
+        }
+        io_wrapper(svname, curr_filename, start5, count5, vegcF);
 
       }
       //PFT only
@@ -4885,7 +4973,8 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //PFT and compartment
       if(curr_spec.pft && curr_spec.compartment){
 
-        ma2dd vegn(boost::extents[NUM_PFT_PART][NUM_PFT]);
+        //ma2dd vegn(boost::extents[NUM_PFT_PART][NUM_PFT]);
+        double vegn[NUM_PFT_PART][NUM_PFT];
         for(int ip=0; ip<NUM_PFT; ip++){
           if(cohort.cd.m_veg.vegcov[ip]>0.){//only check PFTs that exist
 
@@ -4902,7 +4991,13 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
           }
         }
-        io_wrapper(svname, curr_filename, start5, count5, vegn);
+        std::vector<double> vegnF(NUM_PFT_PART*NUM_PFT, -99999);
+        for(int i = 0; i < NUM_PFT_PART; i++) {
+          for(int j = 0; j < NUM_PFT; j++) {
+            vegnF[(i*NUM_PFT)+j] = vegn[i][j];
+          }
+        }
+        io_wrapper(svname, curr_filename, start5, count5, vegnF);
       }
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
@@ -4987,13 +5082,20 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           PFTstart4[0] = day_timestep;
           PFTcount4[0] = dinm;
 
-          ma2dd EET(boost::extents[dinm][NUM_PFT]);
+          //ma2dd EET(boost::extents[dinm][NUM_PFT]);
+          double EET[dinm][NUM_PFT];
           for(int ip=0; ip<NUM_PFT; ip++){
             for(int id=0; id<dinm; id++){
               EET[id][ip] = cohort.ed[ip].daily_eet[id];
             }
           }
-          io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, EET);
+          std::vector<double> EETf(NUM_PFT_PART*NUM_PFT, -99999);
+          for(int i = 0; i < NUM_PFT_PART; i++) {
+            for(int j = 0; j < NUM_PFT; j++) {
+              EETf[(i*NUM_PFT)+j] = EET[i][j];
+            }
+          }
+          io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, EETf);
         }
         else if(curr_spec.monthly){
           PFTstart4[0] = month_timestep;
@@ -5059,13 +5161,20 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         if(curr_spec.daily){
           PFTstart4[0] = day_timestep;
           PFTcount4[0] = dinm;
-          ma2dd PET(boost::extents[dinm][NUM_PFT]);
+          //ma2dd PET(boost::extents[dinm][NUM_PFT]);
+          double PET[dinm][NUM_PFT];
           for(int ip=0; ip<NUM_PFT; ip++){
             for(int id=0; id<dinm; id++){
               PET[id][ip] = cohort.ed[ip].daily_pet[id];
             }
           }
-          io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, PET);
+          std::vector<double> PETf(NUM_PFT_PART*NUM_PFT, -99999);
+          for(int i = 0; i < NUM_PFT_PART; i++) {
+            for(int j = 0; j < NUM_PFT; j++) {
+              PETf[(i*NUM_PFT)+j] = PET[i][j];
+            }
+          }
+          io_wrapper(svname, curr_filename, PFTstart4, PFTcount4, PETf);
         }
         else if(curr_spec.monthly){
           PFTstart4[0] = month_timestep;

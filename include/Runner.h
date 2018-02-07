@@ -39,9 +39,6 @@
 
 using namespace std;
 
-typedef boost::multi_array<double, 1> ma1dd;
-typedef boost::multi_array<double, 2> ma2dd;
-typedef boost::multi_array<double, 3> ma3dd;
 
 class Runner {
 public:
