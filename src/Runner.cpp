@@ -3049,7 +3049,11 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         int il = 0;
         Layer* currL = this->cohort.ground.toplayer;
         while(currL != NULL){
-          orgn[il] = currL->orgn;
+          // There is a problem here. Somehow toplayer includes snow, so we end up
+          // with 26 layers, while the orgn vector only has room for 22. Not sure how to 
+          // fix it.
+          //std::cout << "ORGN BY LAYER["<<il<<"] is: "<< currL->orgn << "\n";
+          //orgn[il] = currL->orgn;
           il++;
           currL = currL->nextl;
         }
