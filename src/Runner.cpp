@@ -1032,11 +1032,11 @@ void Runner::write_var_to_netcdf(const std::string& vname,
 }
 
 template<typename T>
-void Runner::add_to_package_for_IO_slave(const std::string vname, 
-                                         const std::string curr_filename,
-                                         const std::vector<size_t> starts, 
-                                         const std::vector<size_t> counts, 
-                                         const T& values) {
+void Runner::add_to_package_for_IO_slave(const std::string & vname, 
+                                         const std::string & curr_filename,
+                                         const std::vector<size_t> & starts, 
+                                         const std::vector<size_t> & counts, 
+                                         const T & values) {
   //std::cout << "STUB!!!\n";
   BOOST_LOG_SEV(glg, debug) << "STUB for add add_to_package_for_IO_slave(...)";                                 
 }
