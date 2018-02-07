@@ -1827,8 +1827,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     {
       if(curr_spec.daily){      
         start3[0] = day_timestep; 
-        std::vector<double> values;
-        values.reserve(dinm);
+        std::vector<double> values(dinm, -99999);
         for (int id=0; id<dinm; id++) {
           values[id] = cohort.edall->daily_hkdeep[id];
         } 
@@ -1860,8 +1859,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputHKLAYER)
     {
-      std::vector<double> values;
-      values.reserve(MAX_SOI_LAY);
+      std::vector<double> values(MAX_SOI_LAY, -99999);
 
       for(int il=0; il<MAX_SOI_LAY; il++){
         if(curr_spec.monthly){
@@ -1892,8 +1890,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     {
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        std::vector<double> values;
-        values.reserve(dinm);
+        std::vector<double> values(dinm, -99999);
         for (int id=0; id<dinm; id++) {
           values[id] = cohort.edall->daily_hkminea[id];
         } 
@@ -1925,8 +1922,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     {
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        std::vector<double> values;
-        values.reserve(dinm);
+        std::vector<double> values(dinm, -99999);
         for (int id=0; id<dinm; id++) {
           values[id] = cohort.edall->daily_hkmineb[id];
         } 
@@ -1959,8 +1955,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       double hkminec;
       if(curr_spec.daily){
         start3[0] = day_timestep; 
-        std::vector<double> values;
-        values.reserve(dinm);
+        std::vector<double> values(dinm, -99999);
         for (int id=0; id<dinm; id++) {
           values[id] = cohort.edall->daily_hkminec[id];
         } 
@@ -1993,8 +1988,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       double hkshlw;
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        std::vector<double> values;
-        values.reserve(dinm);
+        std::vector<double> values(dinm, -99999);
         for(int id=0; id<dinm; id++){
           values[id] = cohort.edall->daily_hkshlw[id];
         }
@@ -2026,8 +2020,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     {
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        std::vector<double> values;
-        values.reserve(dinm);
+        std::vector<double> values(dinm, -99999);
         for (int id=0; id<dinm; id++) {
           values[id] = cohort.edall->daily_snowthick[id];
         }
@@ -2281,8 +2274,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     {
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        std::vector<double> values;
-        values.reserve(dinm);
+        std::vector<double> values(dinm, -99999);
         for (int id=0; id<dinm; id++){
           values[id] = cohort.edall->daily_swesum[id];
         }
@@ -2316,8 +2308,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     {
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        std::vector<double> values;
-        values.reserve(dinm);
+        std::vector<double> values(dinm, -99999);
         for (int id=0; id<dinm; id++) {
           values[id] = cohort.edall->daily_tcdeep[id];
         }
@@ -2349,8 +2340,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     #pragma omp critical(outputTCLAYER)
     {
 
-      std::vector<double> values;
-      values.reserve(MAX_SOI_LAY);
+      std::vector<double> values(MAX_SOI_LAY, -99999);
 
       if(curr_spec.monthly){
         soilstart4[0] = month_timestep;
@@ -2383,8 +2373,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     {
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        std::vector<double> values;
-        values.reserve(dinm);
+        std::vector<double> values(dinm, -99999);
         for (int id=0; id<dinm; id++) {
           values[id] = cohort.edall->daily_tcminea[id];
         }
@@ -2417,8 +2406,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       double tcmineb;
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        std::vector<double> values;
-        values.reserve(dinm);
+        std::vector<double> values(dinm, -99999);
         for (int id=0; id<dinm; id++) {
           values[id] = cohort.edall->daily_tcmineb[id];
         }
@@ -2450,8 +2438,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     {
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        std::vector<double> values;
-        values.reserve(dinm);
+        std::vector<double> values(dinm, -99999);
         for (int id=0; id<dinm; id++) {
           values[id] = cohort.edall->daily_tcminec[id];
         }
@@ -2483,8 +2470,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     {
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        std::vector<double> values;
-        values.reserve(dinm);
+        std::vector<double> values(dinm, -99999);
         for (int id=0; id<dinm; id++) {
           values[id] = cohort.edall->daily_tcshlw[id];
         } 
@@ -2518,8 +2504,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       double tdeep;
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        std::vector<double> values;
-        values.reserve(dinm);
+        std::vector<double> values(dinm, -99999);
         for (int id=0; id<dinm; id++) {
           values[id] = cohort.edall->daily_tdeep[id];
         } 
@@ -2550,8 +2535,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputTLAYER)
     {
-      std::vector<double> values;
-      values.reserve(MAX_SOI_LAY);
+      std::vector<double> values(MAX_SOI_LAY, -99999);
       if(curr_spec.monthly){
         soilstart4[0] = month_timestep;
         for (int il=0; il<MAX_SOI_LAY; il++) {
@@ -2658,8 +2642,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     {
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        std::vector<double> values;
-        values.reserve(dinm);
+        std::vector<double> values(dinm, -99999);
         for (int id=0; id<dinm; id++) {
           values[id] = cohort.edall->daily_tminea[id];
         }
@@ -2691,8 +2674,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     {
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        std::vector<double> values;
-        values.reserve(dinm);
+        std::vector<double> values(dinm, -99999);
         for (int id=0; id<dinm; id++) {
           values[id] = cohort.edall->daily_tmineb[id];
         }
@@ -2725,8 +2707,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     {
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        std::vector<double> values;
-        values.reserve(dinm);
+        std::vector<double> values(dinm, -99999);
         for (int id=0; id<dinm; id++) {
           values[id] = cohort.edall->daily_tminec[id];
         }
@@ -2758,8 +2739,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     {
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        std::vector<double> values;
-        values.reserve(dinm);
+        std::vector<double> values(dinm, -99999);
         for (int id=0; id<dinm; id++) {
           values[id] = cohort.edall->daily_tshlw[id];
         }
@@ -2791,8 +2771,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     {
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        std::vector<double> values;
-        values.reserve(dinm);
+        std::vector<double> values(dinm, -99999);
         for (int id=0; id<dinm; id++) {
           values[id] = cohort.edall->daily_vwcdeep[id];
         }
@@ -2822,8 +2801,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputVWCLAYER)
     {
-      std::vector<double> values;
-      values.reserve(MAX_SOI_LAY);
+      std::vector<double> values(MAX_SOI_LAY, -99999);
       if(curr_spec.monthly){
         soilstart4[0] = month_timestep;
         for (int il=0; il<MAX_SOI_LAY; il++) {
@@ -2854,8 +2832,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     {
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        std::vector<double> values;
-        values.reserve(dinm);
+        std::vector<double> values(dinm, -99999);
         for (int id=0; id<dinm; id++) {
           values[id] = cohort.edall->daily_vwcminea[id];
         }
@@ -2887,8 +2864,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     {
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        std::vector<double> values;
-        values.reserve(dinm);
+        std::vector<double> values(dinm, -99999);
         for (int id=0; id<dinm; id++) {
           values[id] = cohort.edall->daily_vwcmineb[id];
         }
@@ -2920,8 +2896,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     {
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        std::vector<double> values;
-        values.reserve(dinm);
+        std::vector<double> values(dinm, -99999);
         for (int id=0; id<dinm; id++) {
           values[id] = cohort.edall->daily_vwcminec[id];
         }
@@ -2953,8 +2928,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     {
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        std::vector<double> values;
-        values.reserve(dinm);
+        std::vector<double> values(dinm, -99999);
         for (int id=0; id<dinm; id++) {
           values[id] = cohort.edall->daily_vwcshlw[id];
         }
@@ -2987,8 +2961,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       double watertab;
       if(curr_spec.daily){
         start3[0] = day_timestep;
-        std::vector<double> values;
-        values.reserve(dinm);
+        std::vector<double> values(dinm, -99999);
         for (int id=0; id<dinm; id++) {
           values[id] = cohort.edall->daily_watertab[id];
         }
@@ -3019,8 +2992,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputLAYERDEPTH)
     {
-      std::vector<double> values;
-      values.reserve(MAX_SOI_LAY);
+      std::vector<double> values(MAX_SOI_LAY, -99999);
       if(curr_spec.monthly){
         soilstart4[0] = month_timestep;
         for (int il=0; il<MAX_SOI_LAY; il++) {
@@ -3049,8 +3021,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputLAYERDZ)
     {
-      std::vector<double> values;
-      values.reserve(MAX_SOI_LAY);
+      std::vector<double> values(MAX_SOI_LAY, -99999);
       if(curr_spec.monthly){
         soilstart4[0] = month_timestep;
         for (int il=0; il<MAX_SOI_LAY; il++) {
@@ -3079,8 +3050,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
     #pragma omp critical(outputLAYERTYPE)
     {
-      std::vector<double> values;
-      values.reserve(MAX_SOI_LAY);
+      std::vector<double> values(MAX_SOI_LAY, -99999);
       if(curr_spec.monthly){
         soilstart4[0] = month_timestep;
         for (int il=0; il<MAX_SOI_LAY; il++) {
@@ -3111,8 +3081,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     #pragma omp critical(outputAVLN)
     {
       if(curr_spec.layer){
-        std::vector<double> avln;
-        avln.reserve(MAX_SOI_LAY);
+        std::vector<double> avln(MAX_SOI_LAY, -99999);
         if(curr_spec.monthly){
           soilstart4[0] = month_timestep;
           for(int il=0; il<MAX_SOI_LAY; il++){
@@ -3228,8 +3197,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
         if(curr_spec.monthly){
           soilstart4[0] = month_timestep;
-          std::vector<double> values;
-          values.reserve(MAX_SOI_LAY);
+          std::vector<double> values(MAX_SOI_LAY, -99999);
           for (int il=0; il<MAX_SOI_LAY; il++) {
             /*** STUB ??? ***/
             //values[il] = cohort.soilbgc.bd->m_soi2l.ndrain[il];
@@ -3275,8 +3243,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     {
       if(curr_spec.layer){
 
-        std::vector<double> netnmin;
-        netnmin.reserve(MAX_SOI_LAY);
+        std::vector<double> netnmin(MAX_SOI_LAY, -99999);
         for(int il=0; il<MAX_SOI_LAY; il++){
           if(curr_spec.monthly){
             soilstart4[0] = month_timestep;
@@ -3321,8 +3288,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     {
       if(curr_spec.layer){
 
-        std::vector<double> nimmob;
-        nimmob.reserve(MAX_SOI_LAY);
+        std::vector<double> nimmob(MAX_SOI_LAY, -99999);
         for(int il=0; il<MAX_SOI_LAY; il++){
           if(curr_spec.monthly){
             soilstart4[0] = month_timestep;
@@ -3432,8 +3398,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           soilstart4[0] = year;
         }
 
-        std::vector<double> orgn;
-        orgn.reserve(MAX_SOI_LAY);
+        std::vector<double> orgn(MAX_SOI_LAY, -99999);
         int il = 0;
         Layer* currL = this->cohort.ground.fstsoill;
         while(currL != NULL) {
@@ -3498,8 +3463,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
     {
       if(curr_spec.layer){
 
-        std::vector<double> rh;
-        rh.reserve(MAX_SOI_LAY);
+        std::vector<double> rh(MAX_SOI_LAY, -99999);
         if(curr_spec.monthly){
           soilstart4[0] = month_timestep;
           for(int il=0; il<MAX_SOI_LAY; il++){
@@ -3561,8 +3525,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
           soilstart4[0] = year;
         }
 
-        std::vector<double> soilc;
-        soilc.reserve(MAX_SOI_LAY);
+        std::vector<double> soilc(MAX_SOI_LAY, -99999);
         int il = 0;
 
         Layer* currL = this->cohort.ground.fstsoill;
@@ -3864,8 +3827,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
 
-        std::vector<double> gpp;
-        gpp.reserve(NUM_PFT);
+        std::vector<double> gpp(NUM_PFT, -99999);
         for(int ip=0; ip<NUM_PFT; ip++){
 
           if(curr_spec.monthly){
@@ -3959,8 +3921,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
 
-        std::vector<double> ingpp;
-        ingpp.reserve(NUM_PFT);
+        std::vector<double> ingpp(NUM_PFT, -99999);
         for(int ip=0; ip<NUM_PFT; ip++){
 
           if(curr_spec.monthly){
@@ -4053,8 +4014,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
 
-        std::vector<double> innpp;
-        innpp.reserve(NUM_PFT);
+        std::vector<double> innpp(NUM_PFT, -99999);
         for(int ip=0; ip<NUM_PFT; ip++){
 
           if(curr_spec.monthly){
@@ -4121,8 +4081,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
 
       //PFT
       if(curr_spec.pft){
-        std::vector<double> values;
-        values.reserve(NUM_PFT);
+        std::vector<double> values(NUM_PFT, -99999);
         for(int ip=0; ip<NUM_PFT; ip++){
           if(curr_spec.monthly){
             PFTstart4[0] = month_timestep;
@@ -4203,8 +4162,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
 
-        std::vector<double> ltrfalc;
-        ltrfalc.reserve(NUM_PFT);
+        std::vector<double> ltrfalc(NUM_PFT, -99999);
         for(int ip=0; ip<NUM_PFT; ip++){
 
           if(curr_spec.monthly){
@@ -4300,8 +4258,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
 
-        std::vector<double> ltrfaln;
-        ltrfaln.reserve(NUM_PFT);
+        std::vector<double> ltrfaln(NUM_PFT, -99999);
         for(int ip=0; ip<NUM_PFT; ip++){
           if(curr_spec.monthly){
             PFTstart4[0] = month_timestep;
@@ -4399,8 +4356,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
 
-        std::vector<double> npp;
-        npp.reserve(NUM_PFT);
+        std::vector<double> npp(NUM_PFT, -99999);
         if(curr_spec.monthly){
           PFTstart4[0] = month_timestep;
           for(int ip=0; ip<NUM_PFT; ip++){
@@ -4478,8 +4434,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
         
-        std::vector<double> innuptake;
-        innuptake.reserve(NUM_PFT);
+        std::vector<double> innuptake(NUM_PFT, -99999);
 
         if(curr_spec.monthly){
           PFTstart4[0] = month_timestep;
@@ -4539,8 +4494,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       }
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
-        std::vector<double> labnuptake;
-        labnuptake.reserve(NUM_PFT);
+        std::vector<double> labnuptake(NUM_PFT, -99999);
         if(curr_spec.monthly){
           PFTstart4[0] = month_timestep;
 
@@ -4708,8 +4662,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
 
-        std::vector<double> rg;
-        rg.reserve(NUM_PFT);
+        std::vector<double> rg(NUM_PFT, -99999);
         for(int ip=0; ip<NUM_PFT; ip++){
           if(curr_spec.monthly){
             PFTstart4[0] = month_timestep;
@@ -4801,8 +4754,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
 
-        std::vector<double> rm;
-        rm.reserve(NUM_PFT);
+        std::vector<double> rm(NUM_PFT, -99999);
         for(int ip=0; ip<NUM_PFT; ip++){
           if(curr_spec.monthly){
             PFTstart4[0] = month_timestep;
@@ -4898,8 +4850,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
 
-        std::vector<double> vegc;
-        vegc.reserve(NUM_PFT);
+        std::vector<double> vegc(NUM_PFT, -99999);
 
         for(int ip=0; ip<NUM_PFT; ip++){
 
@@ -4943,8 +4894,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //Neither PFT nor compartment
       else if(!curr_spec.pft && !curr_spec.compartment){
 
-        std::vector<double> vegc;
-        vegc.reserve(1);
+        std::vector<double> vegc(1, -99999);
         if(curr_spec.monthly){
           start3[0] = month_timestep;
           vegc[0] = cohort.bdall->m_vegs.call;
@@ -5002,8 +4952,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
       //PFT only
       else if(curr_spec.pft && !curr_spec.compartment){
 
-        std::vector<double> vegn;
-        vegn.reserve(NUM_PFT);
+        std::vector<double> vegn(NUM_PFT, -99999);
         for(int ip=0; ip<NUM_PFT; ip++){
           if(cohort.cd.m_veg.vegcov[ip]>0.){//only check PFTs that exist
 
@@ -5099,8 +5048,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         }
         else if(curr_spec.monthly){
           PFTstart4[0] = month_timestep;
-          std::vector<double> EET;
-          EET.reserve(NUM_PFT);
+          std::vector<double> EET(NUM_PFT, -99999);
           for(int ip=0; ip<NUM_PFT; ip++){
             EET[ip] = cohort.ed[ip].m_l2a.eet;
           }
@@ -5108,8 +5056,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         }
         else if(curr_spec.yearly){
           PFTstart4[0] = year;
-          std::vector<double> EET;
-          EET.reserve(NUM_PFT);
+          std::vector<double> EET(NUM_PFT, -99999);
           for(int ip=0; ip<NUM_PFT; ip++){
             EET[ip] = cohort.ed[ip].y_l2a.eet;
           }
@@ -5178,8 +5125,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         }
         else if(curr_spec.monthly){
           PFTstart4[0] = month_timestep;
-          std::vector<double> PET;
-          PET.reserve(NUM_PFT);
+          std::vector<double> PET(NUM_PFT, -99999);
           for(int ip=0; ip<NUM_PFT; ip++){
             PET[ip] = cohort.ed[ip].m_l2a.pet;
           }
@@ -5187,8 +5133,7 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         }
         else if(curr_spec.yearly){
           PFTstart4[0] = year;
-          std::vector<double> PET;
-          PET.reserve(NUM_PFT);
+          std::vector<double> PET(NUM_PFT, -99999);
           for(int ip=0; ip<NUM_PFT; ip++){
             PET[ip] = cohort.ed[ip].y_l2a.pet;
           }
