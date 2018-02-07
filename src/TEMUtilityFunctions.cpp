@@ -228,6 +228,61 @@ namespace temutil {
     return root;
   }
 
+  void write_var_to_netcdf(const std::string& vname,
+                           const std::string& curr_filename,
+                           const std::vector<size_t>& starts,
+                           const std::vector<size_t>& counts,
+                           const std::vector<double>& values) {
+
+    int ncid;
+    int cv;
+
+  #ifdef WITHNCPAR
+    temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
+    temutil::nc( nc_inq_varid(ncid, vname.c_str(), &cv) );
+    temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
+  #else
+    temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
+    temutil::nc( nc_inq_varid(ncid, vname.c_str(), &cv) );
+  #endif
+
+    BOOST_LOG_SEV(glg, debug) << "Outputting variable: " << vname << " to " << curr_filename;
+    BOOST_LOG_SEV(glg, debug) << "starts.size: " << starts.size() << " [" << temutil::vec2csv(starts) << "]";
+    BOOST_LOG_SEV(glg, debug) << "counts.size: " << counts.size() << " [" << temutil::vec2csv(counts) << "]";
+    BOOST_LOG_SEV(glg, debug) << "values.size: " << values.size();// << " [" << temutil::vec2csv(counts) << "]";
+
+    if ( (counts.size() == 5) && (values.size() == NUM_PFT_PART*NUM_PFT) ){
+      // For the 5D variables (time, compartment, pft, y, x) we need to 
+      // un-flatten the array, and put it to the nc file.
+      double values2[NUM_PFT_PART][NUM_PFT];
+      for (int i=0; i<NUM_PFT_PART*NUM_PFT; i++){
+        values2[i/NUM_PFT][i%NUM_PFT] = values[i];
+      }
+      temutil::nc( nc_put_vara_double(ncid, cv, &starts[0], &counts[0], &values2[0][0]) );
+
+    } else if ( (counts.size() == 4) ) {
+      int dinm = values.size() / NUM_PFT;
+      if (! (dinm == 30 || dinm == 31 || dinm == 28 || dinm == 29) ) {
+        std::cout << "!!!!!!!!!! ERROR dinm="<< dinm << " vname="<< vname << " values.size()="<< values.size()<< "\n";
+      }
+      // For the 4D variables that are put in bulk to the nc file, we need to
+      // first un-flatten the array...
+      double values2[dinm][NUM_PFT];
+      for(int i=0; i < values.size(); i++) {
+        values2[i/NUM_PFT][i%NUM_PFT] = values[i];
+      }
+      temutil::nc( nc_put_vara_double(ncid, cv, &starts[0], &counts[0], &values2[0][0]) );
+
+    } else if (counts.size() < 1) { // just a single variable/value
+      temutil::nc( nc_put_var1_double(ncid, cv, &starts[0], values.data()) );
+    } else {       // put a bunch of values using the counts array
+      temutil::nc( nc_put_vara_double(ncid, cv, &starts[0], &counts[0], values.data()) );
+    }
+    temutil::nc( nc_close(ncid) );
+
+  }
+
+
   /** rough draft for reading a run-mask (2D vector of ints)
   */
   std::vector< std::vector<int> > read_run_mask(const std::string &filename) {
