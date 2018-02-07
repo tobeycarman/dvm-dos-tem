@@ -119,12 +119,6 @@ private:
                   const std::vector<size_t>& counts,
                   const T& values);
 
-  template<typename T>
-  void write_var_to_netcdf(const std::string& vname,
-                           const std::string& curr_filename,
-                           const std::vector<size_t>& starts,
-                           const std::vector<size_t>& counts,
-                           const T& values);
 
 
 

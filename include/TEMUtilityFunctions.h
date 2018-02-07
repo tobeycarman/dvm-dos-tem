@@ -117,6 +117,12 @@ namespace temutil {
 
   Json::Value parse_control_file(const std::string &filepath);
 
+  void write_var_to_netcdf(const std::string& vname,
+                           const std::string& curr_filename,
+                           const std::vector<size_t>& starts,
+                           const std::vector<size_t>& counts,
+                           const std::vector<double>& values);
+
   std::vector< std::vector<int> > read_run_mask(const std::string &filename);
 
   std::string report_on_netcdf_file(const std::string& fname, const std::string& varname);
