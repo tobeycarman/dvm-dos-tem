@@ -204,13 +204,6 @@ int main(int argc, char* argv[]){
 
   BOOST_LOG_SEV(glg, debug) << "NEW STYLE: Going to run space-major over a 2D area covered by run mask...";
 
-  // Open the run mask (spatial mask)
-  std::vector< std::vector<int> > run_mask = temutil::read_run_mask(modeldata.runmask_file);
-
-  // Figure out how big the run_mask is
-  int num_rows = run_mask.size();
-  int num_cols = run_mask[0].size();
-
   // Make some convenient handles for later...
   std::string run_status_fname = modeldata.output_dir + "run_status.nc";
   std::string pr_restart_fname = modeldata.output_dir + "restart-pr.nc";
@@ -218,6 +211,13 @@ int main(int argc, char* argv[]){
   std::string sp_restart_fname = modeldata.output_dir + "restart-sp.nc";
   std::string tr_restart_fname = modeldata.output_dir + "restart-tr.nc";
   std::string sc_restart_fname = modeldata.output_dir + "restart-sc.nc";
+
+  // Open the run mask (spatial mask)
+  std::vector< std::vector<int> > run_mask = temutil::read_run_mask(modeldata.runmask_file);
+
+  // Figure out how big the run_mask is
+  int num_rows = run_mask.size();
+  int num_cols = run_mask[0].size();
 
 #ifdef WITHMPI
   BOOST_LOG_SEV(glg, fatal) << "Built and running with MPI";
