@@ -4,8 +4,31 @@
 #ifndef UTIL_STRUCTS_H_
 #define UTIL_STRUCTS_H_
 
+//template <typename T>
+struct OutputDataNugget {
+  std::string file_path;
+  std::string vname;
+  std::vector<size_t> starts;
+  std::vector<size_t> counts;
+  std::vector<double> data;
 
-struct OutputSpec{
+  OutputDataNugget(){}
+
+  OutputDataNugget(
+      const std::string file_path, 
+      const std::string vname, 
+      const std::vector<size_t> starts, 
+      const std::vector<size_t> counts, 
+      const std::vector<double> data):
+    file_path(file_path),
+    vname(vname),
+    starts(starts),
+    counts(counts),
+    data(data) {}
+};
+
+
+struct OutputSpec {
   std::string file_path; // Subjective file path, not including filename
   std::string filename_prefix; //example: ALD_monthly
   int dim_count;
@@ -22,6 +45,15 @@ struct OutputSpec{
 
 namespace boost {
   namespace serialization {
+
+  template<class Archive>
+  void serialize(Archive & ar, OutputDataNugget & odn, const unsigned int version) {
+    ar & odn.file_path;
+    ar & odn.vname;
+    ar & odn.starts;
+    ar & odn.counts;
+    ar & odn.data;
+  }
 
   template<class Archive>
   void serialize(Archive & ar, OutputSpec & os, const unsigned int version){

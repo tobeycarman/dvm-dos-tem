@@ -994,8 +994,17 @@ void Runner::add_to_package_for_IO_slave(const std::string & vname,
                                          const std::vector<size_t> & starts, 
                                          const std::vector<size_t> & counts, 
                                          const T & values) {
+
+  OutputDataNugget odn = OutputDataNugget(curr_filename, vname, starts, counts, values);
+  std::cout << "OutputDataNugget.name=" << odn.vname <<  " OutputDataNugget.data.size()=" << odn.data.size() << "\n";
+
   //std::cout << "STUB!!!\n";
   BOOST_LOG_SEV(glg, debug) << "STUB for add add_to_package_for_IO_slave(...)";                                 
+  boost::mpi::communicator world;
+  std::string msg = "Data for " + vname;
+  boost::mpi::request reqs[2];
+  reqs[0] = world.isend(0,686,odn);
+  boost::mpi::wait_all(reqs, reqs+1);
 }
 
 void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, int year, int month, std::string stage){
