@@ -353,7 +353,8 @@ int main(int argc, char* argv[]){
       OutputDataNugget odn;
       reqs[0] = world.irecv(boost::mpi::any_source,686,odn);
       boost::mpi::wait_all(reqs, reqs+1);
-      std::cout << "AND THE MESSAGE IS odn.vname!: " << odn.vname << " odn.data.size()=" << odn.data.size() << "\n";    
+      std::cout << "AND THE MESSAGE IS odn.vname!: " << odn.vname << " odn.data.size()=" << odn.data.size() << "\n"; 
+      temutil::write_var_to_netcdf(odn.vname, odn.file_path, odn.starts, odn.counts, odn.data);   
     }
   } else {
     std::cout << "slave...just keep your head down...\n";
