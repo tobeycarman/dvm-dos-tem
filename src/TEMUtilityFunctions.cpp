@@ -274,17 +274,27 @@ namespace temutil {
       temutil::nc( nc_put_vara_double(ncid, cv, &starts[0], &counts[0], &values2[0][0]) );
 
     } else if ( (counts.size() == 4) ) {
-      int dinm = values.size() / NUM_PFT;
-      if (! (dinm == 30 || dinm == 31 || dinm == 28 || dinm == 29) ) {
-        std::cout << "!!!!!!!!!! ERROR dinm="<< dinm << " vname="<< vname << " values.size()="<< values.size()<< "\n";
+
+      if (values.size() == 10 || values.size() == 22) {
+
+        temutil::nc( nc_put_vara_double(ncid, cv, &starts[0], &counts[0], values.data()) );
+
+      } else {
+    
+        int dinm = values.size() / NUM_PFT;
+
+        if ( (dinm == 30 || dinm == 31 || dinm == 28 || dinm == 29) ) {
+          // For the 4D variables that are put in bulk to the nc file, we need to
+          // first un-flatten the array...
+          double values2[dinm][NUM_PFT];
+          for(int i=0; i < values.size(); i++) {
+            values2[i/NUM_PFT][i%NUM_PFT] = values[i];
+          }
+          temutil::nc( nc_put_vara_double(ncid, cv, &starts[0], &counts[0], &values2[0][0]) );
+        } else {
+          std::cout << "!!!!!!!!!! ERROR dinm="<< dinm << " vname="<< vname << " values.size()="<< values.size()<< "\n";
+        }
       }
-      // For the 4D variables that are put in bulk to the nc file, we need to
-      // first un-flatten the array...
-      double values2[dinm][NUM_PFT];
-      for(int i=0; i < values.size(); i++) {
-        values2[i/NUM_PFT][i%NUM_PFT] = values[i];
-      }
-      temutil::nc( nc_put_vara_double(ncid, cv, &starts[0], &counts[0], &values2[0][0]) );
 
     } else if (counts.size() < 1) { // just a single variable/value
       temutil::nc( nc_put_var1_double(ncid, cv, &starts[0], values.data()) );
