@@ -939,6 +939,7 @@ void Runner::add_to_package_for_IO_slave(const std::string & vname,
                                          const std::vector<size_t> & starts, 
                                          const std::vector<size_t> & counts, 
                                          const T & values) {
+#ifdef WITHMPI
   int id = MPI::COMM_WORLD.Get_rank();
   int ntasks = MPI::COMM_WORLD.Get_size();
 
@@ -963,6 +964,10 @@ void Runner::add_to_package_for_IO_slave(const std::string & vname,
   boost::mpi::request reqs[2];
   reqs[0] = world.isend(designated_io_slave,686,odn);
   boost::mpi::wait_all(reqs, reqs+1);
+#else
+  // pass - empty function body, this should never get called w/o MPI
+#endif
+
 }
 
 void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, int year, int month, std::string stage){
