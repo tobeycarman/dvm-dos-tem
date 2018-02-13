@@ -923,7 +923,7 @@ void Runner::io_wrapper(const std::string& vname,
     temutil::write_var_to_netcdf(vname, curr_filename, starts, counts, values);
   } else {
     add_to_package_for_IO_slave(vname, curr_filename, starts, counts, values);
-    std::cout << "rank " << rank << " sending data to IO slave for " << curr_filename << "\n";
+    //std::cout << "rank " << rank << " sending data to IO slave for " << curr_filename << "\n";
     // try this for starters...maybe the processes will overwrite eachother??
     //temutil::write_var_to_netcdf(vname, curr_filename, starts, counts, values);
   }
@@ -939,16 +939,29 @@ void Runner::add_to_package_for_IO_slave(const std::string & vname,
                                          const std::vector<size_t> & starts, 
                                          const std::vector<size_t> & counts, 
                                          const T & values) {
+  int id = MPI::COMM_WORLD.Get_rank();
+  int ntasks = MPI::COMM_WORLD.Get_size();
+
+  int designated_io_slave = 0;
+  if (vname < "IIII") {
+    designated_io_slave = 0;
+  } else if (vname < "UUUUU") {
+    designated_io_slave = 1;
+  } else {
+    int designated_io_slave = 2;
+  }
+  //BOOST_LOG_SEV(glg, debug) << "id: " << id << " (of " << ntasks << ") is sending an MPI message --to--> " << designated_io_slave << "\n";
+  //std::cout << "id: " << id << " (of " << ntasks << ") is sending an MPI message --to--> " << designated_io_slave << "\n";
+ 
+  // need to pick designated IO slave based on vname...
+   
 
   OutputDataNugget odn = OutputDataNugget(curr_filename, vname, starts, counts, values);
-  std::cout << "OutputDataNugget.name=" << odn.vname <<  " OutputDataNugget.data.size()=" << odn.data.size() << "\n";
+  //std::cout << "OutputDataNugget.name=" << odn.vname <<  " OutputDataNugget.data.size()=" << odn.data.size() << "\n";
 
-  //std::cout << "STUB!!!\n";
-  BOOST_LOG_SEV(glg, debug) << "STUB for add add_to_package_for_IO_slave(...)";                                 
   boost::mpi::communicator world;
-  std::string msg = "Data for " + vname;
   boost::mpi::request reqs[2];
-  reqs[0] = world.isend(0,686,odn);
+  reqs[0] = world.isend(designated_io_slave,686,odn);
   boost::mpi::wait_all(reqs, reqs+1);
 }
 
