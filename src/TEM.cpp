@@ -138,6 +138,7 @@ void enable_floating_point_exceptions() {
   #endif
 
 }
+void setup_outputs(ArgHandler * args, ModelData& modeldata, int num_rows, int num_cols);
 
 ArgHandler* args = new ArgHandler();
 
@@ -209,6 +210,8 @@ int main(int argc, char* argv[]){
   int num_rows = run_mask.size();
   int num_cols = run_mask[0].size();
 
+  int total_cells = num_rows * num_cols;
+
 #ifdef WITHMPI
   BOOST_LOG_SEV(glg, fatal) << "Built and running with MPI";
 
@@ -218,120 +221,16 @@ int main(int argc, char* argv[]){
 
   int id = MPI::COMM_WORLD.Get_rank();
   int ntasks = MPI::COMM_WORLD.Get_size();
-
-#else
-
-  int id = 0;
-  int ntasks = 1;
-
-#endif
-
+  
   // Limit output directory and file setup to a single process.
   // variable 'id' is set to 0 if not built with MPI.
   if ( id == 0 ) {
+    setup_outputs(args, modeldata, num_rows, num_cols);
+  }
+  std::cout << "id: " << id << " WAITING FOR GENERAL OUTPUT SETUP! \n";
+  MPI_Barrier(MPI::COMM_WORLD);
 
-    BOOST_LOG_SEV(glg, info) << "---- RANK 0 (Serial and Parallel) SETUP ----";
-
-    // THIS ONLY NEEDS TO BE DONE BY RANK 0, BUT NOT SURE HOW TO HANDLE THE exit()...
-    // Work on checking that the particular configuration will not result in too
-    // much output.
-    OutputEstimate oe = OutputEstimate(modeldata, args->get_cal_mode());
-    BOOST_LOG_SEV(glg, info) << oe.estimate_as_table();
-
-    if (args->get_max_output_volume().compare("-1") == 0) {
-      // pass - nothing to do, user doesn't want to check for excessive output.
-    } else {
-
-      std::string  mxsz_s = args->get_max_output_volume();
-      double mxsz = oe.hsize2bytes(mxsz_s);
-
-      if ( !(mxsz >= 0) ) {
-        BOOST_LOG_SEV(glg, fatal) << "Invalid size specification!: " << mxsz_s;
-        exit(-1);
-      }
-
-      BOOST_LOG_SEV(glg, info) << "Estimated Total Output (bytes): " << oe.all_cells_total();
-      if ( oe.all_cells_total() > mxsz ) {
-        BOOST_LOG_SEV(glg, fatal) << oe.estimate_as_table();
-        BOOST_LOG_SEV(glg, fatal) << "TOO MUCH OUTPUT SPECIFIED! "
-                                  << "ADJUST YOUR SETTINGS AND TRY AGAIN. "
-                                  << "Or run with '--max-output-volume=-1'";
-        exit(-1);
-      }
-    }
-
-    BOOST_LOG_SEV(glg, info) << "Checking for output directory: "<<modeldata.output_dir;
-    boost::filesystem::path out_dir_path(modeldata.output_dir);
-    if( boost::filesystem::exists(out_dir_path) ){
-      if (args->get_no_output_cleanup()) {
-        BOOST_LOG_SEV(glg, warn) << "WARNING!! Not cleaning up output directory! "
-                                 << "Old and potentially confusing files may be "
-                                 << "present from previous runs!!";
-      } else {
-        BOOST_LOG_SEV(glg, info) << "Output directory exists. Deleting...";
-        boost::filesystem::remove_all(out_dir_path);
-      }
-    }
-    BOOST_LOG_SEV(glg, info) << "Creating output directory: "<<modeldata.output_dir;
-    boost::filesystem::create_directories(out_dir_path);
-
-    //Creating empty restart files for all stages.
-    //Attempting to restrict this to one process (in the conditional
-    // statements above) causes a silent hang in nc_create_par(...)
-    BOOST_LOG_SEV(glg, info) << "Creating empty restart files.";
-    RestartData::create_empty_file(pr_restart_fname, num_rows, num_cols);
-    RestartData::create_empty_file(eq_restart_fname, num_rows, num_cols);
-    RestartData::create_empty_file(sp_restart_fname, num_rows, num_cols);
-    RestartData::create_empty_file(tr_restart_fname, num_rows, num_cols);
-    RestartData::create_empty_file(sc_restart_fname, num_rows, num_cols);
-
-    // Create empty run status file
-    BOOST_LOG_SEV(glg, info) << "Creating empty run status file.";
-    create_empty_run_status_file(run_status_fname, num_rows, num_cols);
-
-    // Create empty output files now so that later, as the program
-    // proceeds, there is somewhere to append output data...
-    BOOST_LOG_SEV(glg, info) << "Creating a set of empty NetCDF output files";
-    if(modeldata.eq_yrs > 0 && modeldata.nc_eq){
-      modeldata.create_netCDF_output_files(num_rows, num_cols, "eq", modeldata.eq_yrs);
-      if(modeldata.eq_yrs > 100 && modeldata.daily_netcdf_outputs.size() > 0){
-        BOOST_LOG_SEV(glg, fatal) << "Daily outputs specified with EQ run greater than 100 years! Reconsider...";
-      }
-    }
-    if(modeldata.sp_yrs > 0 && modeldata.nc_sp){
-      modeldata.create_netCDF_output_files(num_rows, num_cols, "sp", modeldata.sp_yrs);
-    }
-    if(modeldata.tr_yrs > 0 && modeldata.nc_tr){
-      modeldata.create_netCDF_output_files(num_rows, num_cols, "tr", modeldata.tr_yrs);
-    }
-    if(modeldata.sc_yrs > 0 && modeldata.nc_sc){
-      modeldata.create_netCDF_output_files(num_rows, num_cols, "sc", modeldata.sc_yrs);
-    }
-
-#ifdef WITHMPI
-    MPI_Barrier(MPI::COMM_WORLD);
-#endif
-
-    // end id=0
-  } else { 
-    // Nothing to do here if built w/o MPI as there will only be one process.
-
-#ifdef WITHMPI
-    // Block all processes until process 0 has completed output
-    // directory setup.
-    std::cout << "WAITING FOR SETUP!\n";
-    MPI_Barrier(MPI::COMM_WORLD);
-    
-    
-#endif
-
-  } 
-
-#ifdef WITHMPI
   // All together now....
-
-  // NO need for this - we already have called MPI_Init http://www.boost.org/doc/libs/1_64_0/doc/html/boost/mpi/environment.html
-  //boost::mpi::environment env; 
   if ( !(boost::mpi::environment::initialized) ) {
     std::cout << "ERROR?? MPI environment not initialized??\n";
     throw std::runtime_error(std::string("Failed: ERROR?? MPI environment not initialized??\n "));
@@ -339,28 +238,141 @@ int main(int argc, char* argv[]){
 
   boost::mpi::communicator world;
 
-  std::cout << "BROADCASTING OUTPUT SPEC!\n";
   boost::mpi::broadcast(world, modeldata.yearly_netcdf_outputs, 0);
   boost::mpi::broadcast(world, modeldata.monthly_netcdf_outputs, 0);
   boost::mpi::broadcast(world, modeldata.daily_netcdf_outputs, 0);
+  
+  std::cout << "id: " << id << " WAITING FOR THE OutputSpec to BROADCAST! \n";
+  MPI_Barrier(MPI::COMM_WORLD);
+  
+  // int i = 0;
+  // char hostname[256];
+  // gethostname(hostname, sizeof(hostname));
+  // printf("PID %d on %s ready for attach\n", getpid(), hostname);
+  // fflush(stdout);
+  // while (0 == i)
+  //     sleep(5);
 
-  if (id==0) {
-    std::cout << "MASTER PROCESS --- WAITING FOR MESSAGES FROM SLAVES...\n";
+  int N_IO_SLAVES = 3;
+  
+  std::set<int> io_slaves;
+  for (int i = 0; i < N_IO_SLAVES; i++) {
+    io_slaves.insert(i);
+  }
+  
+  std::set<int> worker_slaves;
+  for (int i = N_IO_SLAVES; i < ntasks; i++) {
+    worker_slaves.insert(i);
+  }
+
+  std::cout << "id/ntasks: " << id << "/" << ntasks << "\n";
+  std::cout << "io_slave set size: " << io_slaves.size() << " worker_slave set size: " << worker_slaves.size() << "\n";
+  std::cout << *(io_slaves.find(id)) << "\n";
+  
+  std::set<int>::iterator ios_it = io_slaves.find(id);
+  if (ios_it != io_slaves.end()) {
+
+    std::cout << "IO_SLAVE PROCESS " << id <<" --- WAITING FOR MESSAGES FROM WORKERS!...\n";
     
-
     while (true) {
       boost::mpi::request reqs[2];
       OutputDataNugget odn;
       reqs[0] = world.irecv(boost::mpi::any_source,686,odn);
       boost::mpi::wait_all(reqs, reqs+1);
-      std::cout << "AND THE MESSAGE IS odn.vname!: " << odn.vname << " odn.data.size()=" << odn.data.size() << "\n"; 
+      //std::cout << "AND THE MESSAGE IS odn.vname!: " << odn.vname << " odn.data.size()=" << odn.data.size() << "\n"; 
       temutil::write_var_to_netcdf(odn.vname, odn.file_path, odn.starts, odn.counts, odn.data);   
     }
+    
+    // NEED SOME WAY TO END THE WHILE AND EXIT...
+
   } else {
-    std::cout << "slave...just keep your head down...\n";
+    std::cout << "Didn't find process " << id << " in the io_slave set. Maybe its a worker_slave?\n";
   }
   
-#endif
+  
+  std::set<int>::iterator ws_it = worker_slaves.find(id);
+  if (ws_it != worker_slaves.end()) {
+
+    std::cout << "WORKER SLAVE PROCESS " << id << " --- GOTTA GET DOWN TO WORK!\n";
+
+
+    int designated_IO_slave = id % N_IO_SLAVES;
+    std::cout << "id: " << id << " --> This processes's dedicated IO_Slave is process: " << designated_IO_slave << "\n";
+    
+    // Loop over all cells...
+    for (int curr_cell = 0; curr_cell < total_cells; curr_cell++){
+
+      int rowidx = curr_cell / num_cols;
+      int colidx = curr_cell % num_cols;
+
+      bool mask_value = run_mask[rowidx][colidx];
+      BOOST_LOG_SEV(glg, fatal) << "MPI rank: " << id << ", cell: " << rowidx 
+                                << ", " << colidx << " run: " << mask_value;
+
+      // not working, skips the first cell all the time.
+      if ( id == ((curr_cell - N_IO_SLAVES) % worker_slaves.size() + N_IO_SLAVES) ) {
+      if (true == mask_value) {
+
+        // I think this is safe w/in our OpenMP block because I am
+        // handling the exception here...
+        // Not sure about other OpenMP pragama blocks w/in this one? Any
+        // Exceptions would leak out of the inner pragma and be handled
+        // by this try/catch??
+        try {
+
+          cell_stime = time(0);
+
+          std::cout << "id: " << id << " running cell (y,x): (" << rowidx << "," << colidx << ")" << std::endl;
+          advance_model(rowidx, colidx, modeldata, args->get_cal_mode(), pr_restart_fname, eq_restart_fname, sp_restart_fname, tr_restart_fname, sc_restart_fname);
+
+          cell_etime = time(0);
+          BOOST_LOG_SEV(glg, note) << "Finished cell " << rowidx << ", " << colidx << ". Writing status file...";
+          std::cout << "cell " << rowidx << ", " << colidx << " complete. time (secs): " << difftime(cell_etime, cell_stime) << std::endl;
+          write_status(run_status_fname, rowidx, colidx, 100);
+        
+        } catch (std::exception& e) {
+
+          BOOST_LOG_SEV(glg, err) << "EXCEPTION!! (row, col): (" << rowidx << ", " << colidx << "): " << e.what();
+          std::cout << "EXCEPTION! (row, col): (" << rowidx << ", " << colidx << "): " << e.what() << std::endl;
+
+          // IS THIS THREAD SAFE??
+          // IS IT SAFE WITH MPI??
+          std::ofstream outfile;
+          outfile.open((modeldata.output_dir + "fail_log.txt").c_str(), std::ios_base::app); // Append mode
+          outfile << "EXCEPTION!! At pixel at (row, col): ("<<rowidx <<", "<<colidx<<") "<< e.what() <<"\n";
+          outfile.close();
+
+          // Write to fail_mask.nc file?? or json? might be good for visualization
+          write_status(run_status_fname, rowidx, colidx, -100); // <- what if this throws??
+          BOOST_LOG_SEV(glg, err) << "End of exception handler.";
+
+        }
+      } else {
+        BOOST_LOG_SEV(glg, fatal) << "Skipping cell (" << rowidx << ", " << colidx << ")";
+        write_status(run_status_fname, rowidx, colidx, 0);
+      }
+      } else {
+        std::cout << "id: " << id << " skipping cell (y,x) " << rowidx << "," << colidx << ")\n";
+      }
+
+    }
+    
+    //send message to dedicated io slave saying that this worker is done    
+
+  
+  } else {
+    std::cout << "Didn't find process " << id << " in the worker_slave set. Maybe its an io_slave?\n";
+  }
+  std::cout << "END of MPI Run!\n";
+
+  while (true) {
+    // pass...
+  }
+
+}
+#else
+
+  setup_outputs(args, modeldata, num_rows, num_cols);
 
   if (args->get_loop_order() == "space-major") {
 
@@ -395,36 +407,16 @@ int main(int argc, char* argv[]){
     //      depending on the comparison operator
     //  - The loop must be a basic block: no jump to outside the loop
     //      other than the exit statement.
-#ifdef WITHMPI
-    BOOST_LOG_SEV(glg, info) << "Beginning MPI parallel section";
 
-    int id = MPI::COMM_WORLD.Get_rank();
-    int ntasks = MPI::COMM_WORLD.Get_size();
 
-    int total_cells = num_rows*num_cols;
-
-    BOOST_LOG_SEV(glg, debug) << "id: "<<id<<" of ntasks: "<<ntasks;
-
-    #pragma omp parallel for schedule(dynamic)
-    for(int curr_cell=id; curr_cell<total_cells; curr_cell+=ntasks){
-
-      int rowidx = curr_cell / num_cols;
-      int colidx = curr_cell % num_cols;
-
-      bool mask_value = run_mask[rowidx][colidx];
-      BOOST_LOG_SEV(glg, fatal) << "MPI rank: "<<id<<", cell: "<<rowidx\
-                                << ", "<<colidx<<" run: "<<mask_value;
-
-#else
     BOOST_LOG_SEV(glg, debug) << "Not built with MPI";
 
-   #pragma omp parallel for collapse(2) schedule(dynamic)
+    #pragma omp parallel for collapse(2) schedule(dynamic)
     for(int rowidx=0; rowidx<num_rows; rowidx++){
       for(int colidx=0; colidx<num_cols; colidx++){
 
         bool mask_value = run_mask[rowidx].at(colidx);
 
-#endif
 
         if (true == mask_value) {
 
@@ -466,13 +458,8 @@ int main(int argc, char* argv[]){
           write_status(run_status_fname, rowidx, colidx, 0);
         }
  
-#ifdef WITHMPI
-    } // end loop over cells (single flattened loop)
-    MPI_Finalize();
-#else
       }//end col loop
     }//end row loop
-#endif
  
   } else if (args->get_loop_order() == "time-major") {
     BOOST_LOG_SEV(glg, warn) << "DO NOTHING. NOT IMPLEMENTED YET.";
@@ -497,6 +484,7 @@ int main(int argc, char* argv[]){
   std::cout << "Total Seconds: " << difftime(etime, stime) << std::endl;
   return 0;
 } /* End main() */
+#endif
 
 /** Pretty print a 2D vector of ints */
 void pp_2dvec(const std::vector<std::vector<int> > & vv) {
@@ -878,6 +866,92 @@ void advance_model(const int rowidx, const int colidx,
 
 
 } // end advance_model
+
+void setup_outputs(ArgHandler * args, ModelData& modeldata, int num_rows, int num_cols) {
+
+    // Make some convenient handles for later...
+    std::string run_status_fname = modeldata.output_dir + "run_status.nc";
+    std::string pr_restart_fname = modeldata.output_dir + "restart-pr.nc";
+    std::string eq_restart_fname = modeldata.output_dir + "restart-eq.nc";
+    std::string sp_restart_fname = modeldata.output_dir + "restart-sp.nc";
+    std::string tr_restart_fname = modeldata.output_dir + "restart-tr.nc";
+    std::string sc_restart_fname = modeldata.output_dir + "restart-sc.nc";
+
+    OutputEstimate oe = OutputEstimate(modeldata, args->get_cal_mode());
+    BOOST_LOG_SEV(glg, info) << oe.estimate_as_table();
+
+    if (args->get_max_output_volume().compare("-1") == 0) {
+      // pass - nothing to do, user doesn't want to check for excessive output.
+    } else {
+
+      std::string  mxsz_s = args->get_max_output_volume();
+      double mxsz = oe.hsize2bytes(mxsz_s);
+
+      if ( !(mxsz >= 0) ) {
+        BOOST_LOG_SEV(glg, fatal) << "Invalid size specification!: " << mxsz_s;
+        exit(-1);
+      }
+
+      BOOST_LOG_SEV(glg, info) << "Estimated Total Output (bytes): " << oe.all_cells_total();
+      if ( oe.all_cells_total() > mxsz ) {
+        BOOST_LOG_SEV(glg, fatal) << oe.estimate_as_table();
+        BOOST_LOG_SEV(glg, fatal) << "TOO MUCH OUTPUT SPECIFIED! "
+                                  << "ADJUST YOUR SETTINGS AND TRY AGAIN. "
+                                  << "Or run with '--max-output-volume=-1'";
+        exit(-1);
+      }
+    }
+
+    BOOST_LOG_SEV(glg, info) << "Checking for output directory: "<<modeldata.output_dir;
+    boost::filesystem::path out_dir_path(modeldata.output_dir);
+    if( boost::filesystem::exists(out_dir_path) ){
+      if (args->get_no_output_cleanup()) {
+        BOOST_LOG_SEV(glg, warn) << "WARNING!! Not cleaning up output directory! "
+                                 << "Old and potentially confusing files may be "
+                                 << "present from previous runs!!";
+      } else {
+        BOOST_LOG_SEV(glg, info) << "Output directory exists. Deleting...";
+        boost::filesystem::remove_all(out_dir_path);
+      }
+    }
+    BOOST_LOG_SEV(glg, info) << "Creating output directory: "<<modeldata.output_dir;
+    boost::filesystem::create_directories(out_dir_path);
+
+    //Creating empty restart files for all stages.
+    //Attempting to restrict this to one process (in the conditional
+    // statements above) causes a silent hang in nc_create_par(...)
+    BOOST_LOG_SEV(glg, info) << "Creating empty restart files.";
+    RestartData::create_empty_file(pr_restart_fname, num_rows, num_cols);
+    RestartData::create_empty_file(eq_restart_fname, num_rows, num_cols);
+    RestartData::create_empty_file(sp_restart_fname, num_rows, num_cols);
+    RestartData::create_empty_file(tr_restart_fname, num_rows, num_cols);
+    RestartData::create_empty_file(sc_restart_fname, num_rows, num_cols);
+
+    // Create empty run status file
+    BOOST_LOG_SEV(glg, info) << "Creating empty run status file.";
+    create_empty_run_status_file(run_status_fname, num_rows, num_cols);
+
+    // Create empty output files now so that later, as the program
+    // proceeds, there is somewhere to append output data...
+    BOOST_LOG_SEV(glg, info) << "Creating a set of empty NetCDF output files";
+    if(modeldata.eq_yrs > 0 && modeldata.nc_eq){
+      modeldata.create_netCDF_output_files(num_rows, num_cols, "eq", modeldata.eq_yrs);
+      if(modeldata.eq_yrs > 100 && modeldata.daily_netcdf_outputs.size() > 0){
+        BOOST_LOG_SEV(glg, fatal) << "Daily outputs specified with EQ run greater than 100 years! Reconsider...";
+      }
+    }
+    if(modeldata.sp_yrs > 0 && modeldata.nc_sp){
+      modeldata.create_netCDF_output_files(num_rows, num_cols, "sp", modeldata.sp_yrs);
+    }
+    if(modeldata.tr_yrs > 0 && modeldata.nc_tr){
+      modeldata.create_netCDF_output_files(num_rows, num_cols, "tr", modeldata.tr_yrs);
+    }
+    if(modeldata.sc_yrs > 0 && modeldata.nc_sc){
+      modeldata.create_netCDF_output_files(num_rows, num_cols, "sc", modeldata.sc_yrs);
+    }
+}
+
+
 
 /** Creates (overwrites) an empty run_status file. */
 void create_empty_run_status_file(const std::string& fname,
