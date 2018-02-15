@@ -275,28 +275,49 @@ int main(int argc, char* argv[]){
     worker_slaves.insert(i);
   }
 
-  std::cout << "id/ntasks: " << id << "/" << ntasks << "\n";
-  std::cout << "io_slave set size: " << io_slaves.size() << " worker_slave set size: " << worker_slaves.size() << "\n";
-  std::cout << *(io_slaves.find(id)) << "\n";
+  //std::cout << "id/ntasks: " << id << "/" << ntasks << "\n";
+  //std::cout << "io_slave set size: " << io_slaves.size() << " worker_slave set size: " << worker_slaves.size() << "\n";
+  //std::cout << *(io_slaves.find(id)) << "\n";
   
   std::set<int>::iterator ios_it = io_slaves.find(id);
   if (ios_it != io_slaves.end()) {
 
     std::cout << "IO_SLAVE PROCESS " << id <<" --- WAITING FOR MESSAGES FROM WORKERS!...\n";
     
-    while (true) {
+    while (worker_slaves.size() > 0) {
+
       boost::mpi::request reqs[2];
+
       OutputDataNugget odn;
-      reqs[0] = world.irecv(boost::mpi::any_source,686,odn);
-      boost::mpi::wait_all(reqs, reqs+1);
-      //std::cout << "AND THE MESSAGE IS odn.vname!: " << odn.vname << " odn.data.size()=" << odn.data.size() << "\n"; 
-      temutil::write_var_to_netcdf(odn.vname, odn.file_path, odn.starts, odn.counts, odn.data);   
+      std::string done_rank;
+
+      reqs[0] = world.irecv(boost::mpi::any_source, 686, odn);
+      reqs[1] = world.irecv(boost::mpi::any_source, 999, done_rank);
+
+      std::pair<boost::mpi::status, boost::mpi::request*> curr_result;
+
+      curr_result = boost::mpi::wait_any(reqs, reqs+2);
+
+      boost::mpi::status s = curr_result.first;
+
+      //std::cout << "id: " << id << " curr_result.first.source(): " << s.source() << " curr_result.first.tag(): " << s.tag() << "\n";
+
+      if (s.tag() == 999) {
+        int i =  atoi(done_rank.c_str());
+        std::cout << "id: " << id << " worker slave " << i << " is done, removing it from set...\n";
+        worker_slaves.erase(i);
+        std::cout << "id: " << id << " Done removing from set ..\n";
+              
+      } else if (s.tag() == 686) {
+        temutil::write_var_to_netcdf(odn.vname, odn.file_path, odn.starts, odn.counts, odn.data);   
+      }
+
     }
     
-    // NEED SOME WAY TO END THE WHILE AND EXIT...
+    std::cout << "id: " << id << " Nothing left in worker slave set...time to move on!\n";
 
   } else {
-    std::cout << "Didn't find process " << id << " in the io_slave set. Maybe its a worker_slave?\n";
+    //std::cout << "Didn't find process " << id << " in the io_slave set. Maybe its a worker_slave?\n";
   }
   
   
@@ -362,23 +383,31 @@ int main(int argc, char* argv[]){
         write_status(run_status_fname, rowidx, colidx, 0);
       }
       } else {
-        std::cout << "id: " << id << " skipping cell (y,x) " << rowidx << "," << colidx << ")\n";
+        //std::cout << "id: " << id << " skipping cell (y,x) " << rowidx << "," << colidx << ")\n";
       }
 
     }
     
-    //send message to dedicated io slave saying that this worker is done    
+    // send message to all IO slaves slave saying that this worker is done  
 
+    for (int i=0; i<3; i++) {
+      std::stringstream ss;
+      ss << id;  
+      std::string this_rank_is_done = ss.str();
+      boost::mpi::communicator world;
+      boost::mpi::request reqs[1];    
+      reqs[0] = world.isend(i, 999, this_rank_is_done);
+      boost::mpi::wait_all(reqs, reqs+1);
+    }
   
   } else {
-    std::cout << "Didn't find process " << id << " in the worker_slave set. Maybe its an io_slave?\n";
+    //std::cout << "Didn't find process " << id << " in the worker_slave set. Maybe its an io_slave?\n";
   }
-  std::cout << "END of MPI Run!\n";
-
-  while (true) {
-    // pass...
-  }
-
+  std::cout << "END of MPI Run for id: " << id << "!\n";
+  
+  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Finalize();
+  return 0;
 }
 #else
 

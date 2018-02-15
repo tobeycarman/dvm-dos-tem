@@ -960,6 +960,7 @@ void Runner::add_to_package_for_IO_slave(const std::string & vname,
   OutputDataNugget odn = OutputDataNugget(curr_filename, vname, starts, counts, values);
   //std::cout << "OutputDataNugget.name=" << odn.vname <<  " OutputDataNugget.data.size()=" << odn.data.size() << "\n";
 
+  //std::cout << "id: " << id << " is sending a message to rank: " << designated_io_slave << "\n";
   boost::mpi::communicator world;
   boost::mpi::request reqs[2];
   reqs[0] = world.isend(designated_io_slave,686,odn);
