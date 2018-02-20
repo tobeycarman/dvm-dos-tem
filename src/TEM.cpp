@@ -35,6 +35,7 @@
 #include <exception>
 #include <map>
 #include <set>
+#include <queue>
 #include <json/writer.h>
 
 #include <json/value.h>
@@ -45,7 +46,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
-
+#include <boost/optional.hpp>
 
 #include <json/value.h>
 
@@ -215,6 +216,14 @@ int main(int argc, char* argv[]){
 #ifdef WITHMPI
   BOOST_LOG_SEV(glg, fatal) << "Built and running with MPI";
 
+  // MPI message tags
+  int CELL_COMPLETE = 100;
+  int CELL_FAIL = 999;
+  int IO_DATA = 686;
+  int WORKER_READY = 555;
+  int RUN_CELL = 222;
+  int DIE_TAG = 888;
+
   // Intended for passing argc and argv, the arguments to MPI_Init
   // are currently unnecessary.
   MPI_Init(NULL, NULL);
@@ -227,7 +236,7 @@ int main(int argc, char* argv[]){
   if ( id == 0 ) {
     setup_outputs(args, modeldata, num_rows, num_cols);
   }
-  std::cout << "id: " << id << " WAITING FOR GENERAL OUTPUT SETUP! \n";
+  std::cout << "id: " << id << " WAITING FOR GENERAL OUTPUT SETUP!" << std::endl;
   MPI_Barrier(MPI::COMM_WORLD);
 
   // All together now....
@@ -242,9 +251,11 @@ int main(int argc, char* argv[]){
   boost::mpi::broadcast(world, modeldata.monthly_netcdf_outputs, 0);
   boost::mpi::broadcast(world, modeldata.daily_netcdf_outputs, 0);
   
-  std::cout << "id: " << id << " WAITING FOR THE OutputSpec to BROADCAST! \n";
+  std::cout << "id: " << id << " WAITING FOR THE OutputSpec to BROADCAST!" << std::endl;
   MPI_Barrier(MPI::COMM_WORLD);
+  sleep(3);
   
+  // Use this for debugging....
   // int i = 0;
   // char hostname[256];
   // gethostname(hostname, sizeof(hostname));
@@ -253,152 +264,203 @@ int main(int argc, char* argv[]){
   // while (0 == i)
   //     sleep(5);
 
-  int N_IO_SLAVES = 3;
-  
-  std::set<int> io_slaves;
-  for (int i = 0; i < N_IO_SLAVES; i++) {
-    io_slaves.insert(i);
-  }
-  
-  std::set<int> worker_slaves;
-  for (int i = N_IO_SLAVES; i < ntasks; i++) {
-    worker_slaves.insert(i);
-  }
+  if (id == 0) {
 
-  //std::cout << "id/ntasks: " << id << "/" << ntasks << "\n";
-  //std::cout << "io_slave set size: " << io_slaves.size() << " worker_slave set size: " << worker_slaves.size() << "\n";
-  //std::cout << *(io_slaves.find(id)) << "\n";
-  
-  std::set<int>::iterator ios_it = io_slaves.find(id);
-  if (ios_it != io_slaves.end()) {
+    // build list of processors (workers)
+    std::queue<int> worker_q;
+    for (int i = 1; i < ntasks; i++) {
+      worker_q.push(i);
+    }
+    std::cout << "master process " << id << " found " << worker_q.size() << " processors.\n";
+ 
+ 
+    // build list of cells that need running
+    typedef std::vector<int> vec;
+    typedef std::vector<vec> vec2D;
 
-    std::cout << "IO_SLAVE PROCESS " << id <<" --- WAITING FOR MESSAGES FROM WORKERS!...\n";
+    vec2D::const_iterator row;
+    vec::const_iterator col;
+
+    std::queue<std::pair<int,int> > cell_q;
+  
+    for(int rowidx=0; rowidx<num_rows; rowidx++){
+      for(int colidx=0; colidx<num_cols; colidx++){
+
+        bool mask_value = run_mask[rowidx].at(colidx);
+
+        if (true == mask_value) {
+          cell_q.push(std::pair<int,int>(rowidx, colidx));
+        }
+      }
+    }
+    std::cout << "master process " << id << " found " << cell_q.size() << " valid cells to run in mask.\n";
+ 
+    std::cout << "master process looping until there are no cells left in the queue....\n";
+    while (1) {
     
-    while (worker_slaves.size() > 0) {
+      // send die message
+      if (cell_q.size() < 1) {
+        std::cout << "master process " << id << " has no more valid cells to run in mask. Sending kill message to all workers.\n";
+        for (int i = 0; i < worker_q.size(); i++) {
+          world.send(i, DIE_TAG, "Master is telling you to quit!");
+        }
+        std::cout << "master process " << id << " is breaking the listen loop..." << std::endl;
+        break;
+      }
+      
+       // listen for a few types of messages
+      int N_MSG_TYPES = 4;
+      std::vector<boost::mpi::request> reqs(N_MSG_TYPES);
 
-      boost::mpi::request reqs[2];
-
+      // which might have these types of data
       OutputDataNugget odn;
-      std::string done_rank;
+      std::pair<int, int> cell_complete;
+      std::string worker_ready;
+      std::pair<std::pair<int, int>, std::string> cell_fail;
 
-      reqs[0] = world.irecv(boost::mpi::any_source, 686, odn);
-      reqs[1] = world.irecv(boost::mpi::any_source, 999, done_rank);
+      // setup the listens
+      reqs[0] = world.irecv(boost::mpi::any_source, IO_DATA, odn);
+      reqs[1] = world.irecv(boost::mpi::any_source, CELL_COMPLETE, cell_complete);
+      reqs[2] = world.irecv(boost::mpi::any_source, WORKER_READY, worker_ready);
+      reqs[3] = world.irecv(boost::mpi::any_source, CELL_FAIL, cell_fail);
 
-      std::pair<boost::mpi::status, boost::mpi::request*> curr_result;
-
-      curr_result = boost::mpi::wait_any(reqs, reqs+2);
-
+      // setup the stuff for checking messages      
+      typedef std::vector<boost::mpi::request>::iterator req_it;
+      std::pair<boost::mpi::status, req_it> curr_result;
+      curr_result = boost::mpi::wait_any(reqs.begin(), reqs.end());
       boost::mpi::status s = curr_result.first;
+      boost::mpi::request r = *(curr_result.second);
+      
 
       //std::cout << "id: " << id << " curr_result.first.source(): " << s.source() << " curr_result.first.tag(): " << s.tag() << "\n";
+      //std::cout << "s.source: " << s.source() << " s.tag: " << s.tag() << " s.error: " << s.error() << " s.cancelled: " << s.cancelled() << std::endl;
+    
+      if (s.tag() == CELL_COMPLETE) {
 
-      if (s.tag() == 999) {
-        int i =  atoi(done_rank.c_str());
-        std::cout << "id: " << id << " worker slave " << i << " is done, removing it from set...\n";
-        worker_slaves.erase(i);
-        std::cout << "id: " << id << " Done removing from set ..\n";
-              
-      } else if (s.tag() == 686) {
+        int rowidx = cell_complete.first;
+        int colidx = cell_complete.second;
+
+        std::cout << "master process " << id << " got message that cell " << rowidx << ", " << colidx << " is done.\n";
+    
+        write_status(run_status_fname, rowidx, colidx, 100);
+
+      } else if (s.tag() == IO_DATA) {
+
+        //std::cout << "master process " << id << " got data for " << odn.vname << " to write to netcdf file: " << odn.file_path << "\n";
         temutil::write_var_to_netcdf(odn.vname, odn.file_path, odn.starts, odn.counts, odn.data);   
+
+      } else if (s.tag() == WORKER_READY) {
+
+        std::cout << "master process " << id << " got a message that worker " << worker_ready << " is ready to work!\n";
+        std::cout << "master process " << id << " sending (blocking) work order to " << worker_ready << "\n";
+        world.send(atoi(worker_ready.c_str()), RUN_CELL, cell_q.front());
+        cell_q.pop();
+        std::cout << "master process " << id << " done sending (blocking) work order to " << worker_ready << "\n";
+
+      } else if (s.tag() == CELL_FAIL) {
+
+        std::pair<int, int> coords = cell_fail.first;
+        std::string excp_msg = cell_fail.second;
+        int rowidx = coords.first;
+        int colidx = coords.second;
+    
+        std::cout << "master process " << id << " got a message that a cell FAILED! ("<<rowidx <<", "<<colidx<<") "<< excp_msg << "\n";
+
+        // write exception message to fail log 
+        std::ofstream outfile;
+        outfile.open((modeldata.output_dir + "fail_log.txt").c_str(), std::ios_base::app); // Append mode
+        outfile << "EXCEPTION!! At pixel at (row, col): ("<<rowidx <<", "<<colidx<<") "<< excp_msg <<"\n";
+        outfile.close();
+
+        write_status(run_status_fname, rowidx, colidx, -100);
+ 
+      } else {
+        std::cout << "UNKNOWN TAG! " << s.tag() << std::endl;
       }
 
     }
-    
-    std::cout << "id: " << id << " Nothing left in worker slave set...time to move on!\n";
-
-  } else {
-    //std::cout << "Didn't find process " << id << " in the io_slave set. Maybe its a worker_slave?\n";
+    std::cout << "master process " << id << " out of listen loop. Setting MPI_Barrier().\n";
+    MPI_Barrier(MPI_COMM_WORLD);
   }
-  
-  
-  std::set<int>::iterator ws_it = worker_slaves.find(id);
-  if (ws_it != worker_slaves.end()) {
+  if (id > 0) {
+    std::cout << "worker process " << id << " setting up shop by sending (blocking) WORKER_READY message...\n";
+    std::stringstream ss;
+    ss << id;
+    world.send(0, WORKER_READY, ss.str());
+    std::cout << "worker process " << id << "sent WORKER_READY message.\n";
+    while (1) {
 
-    std::cout << "WORKER SLAVE PROCESS " << id << " --- GOTTA GET DOWN TO WORK!\n";
+      // listen for a few types of messages
+      int N_MSG_TYPES = 2;
+      std::vector<boost::mpi::request> reqs(N_MSG_TYPES);
 
 
-    int designated_IO_slave = id % N_IO_SLAVES;
-    std::cout << "id: " << id << " --> This processes's dedicated IO_Slave is process: " << designated_IO_slave << "\n";
-    
-    // Loop over all cells...
-    for (int curr_cell = 0; curr_cell < total_cells; curr_cell++){
+      // which might have these types of data
+      std::pair<int, int> cell_to_run;
+      std::string die_command;
 
-      int rowidx = curr_cell / num_cols;
-      int colidx = curr_cell % num_cols;
+      // setup the listens
+      reqs[0] = world.irecv(boost::mpi::any_source, RUN_CELL, cell_to_run);
+      reqs[1] = world.irecv(boost::mpi::any_source, DIE_TAG, die_command);
 
-      bool mask_value = run_mask[rowidx][colidx];
-      BOOST_LOG_SEV(glg, fatal) << "MPI rank: " << id << ", cell: " << rowidx 
-                                << ", " << colidx << " run: " << mask_value;
+      typedef std::vector<boost::mpi::request>::iterator req_it;
+      std::pair<boost::mpi::status, req_it> curr_result;
+      curr_result = boost::mpi::wait_any(reqs.begin(), reqs.end());
+      boost::mpi::status s = curr_result.first;
+      boost::mpi::request r = *(curr_result.second);
 
-      // not working, skips the first cell all the time.
-      if ( id == ((curr_cell - N_IO_SLAVES) % worker_slaves.size() + N_IO_SLAVES) ) {
-      if (true == mask_value) {
+      std::cout << "id: " << id << " curr_result.first.source(): " << s.source() << " curr_result.first.tag(): " << s.tag() << "\n";
 
-        // I think this is safe w/in our OpenMP block because I am
-        // handling the exception here...
-        // Not sure about other OpenMP pragama blocks w/in this one? Any
-        // Exceptions would leak out of the inner pragma and be handled
-        // by this try/catch??
+      if (s.tag() == RUN_CELL) {
+      
+        int rowidx = cell_to_run.first;
+        int colidx = cell_to_run.second;
+        std::cout << "worker process " << id << " got message to run cell(row,col): " << rowidx << ", " << colidx << "\n";
+
         try {
 
           cell_stime = time(0);
 
-          std::cout << "id: " << id << " running cell (y,x): (" << rowidx << "," << colidx << ")" << std::endl;
+          std::cout << "worker " << id << " running cell (y,x): (" << rowidx << "," << colidx << ")" << std::endl;
           advance_model(rowidx, colidx, modeldata, args->get_cal_mode(), pr_restart_fname, eq_restart_fname, sp_restart_fname, tr_restart_fname, sc_restart_fname);
 
           cell_etime = time(0);
           BOOST_LOG_SEV(glg, note) << "Finished cell " << rowidx << ", " << colidx << ". Writing status file...";
           std::cout << "cell " << rowidx << ", " << colidx << " complete. time (secs): " << difftime(cell_etime, cell_stime) << std::endl;
-          write_status(run_status_fname, rowidx, colidx, 100);
+          
+          std::pair<int, int> msg(rowidx, colidx);
+
+          // send (blocking?) finished message with row, col
+          world.send(0, CELL_COMPLETE, msg);
+          std::cout << "worker " << id << " completed blocking send of CELL_COMPLETE message to process 0" << std::endl; 
         
         } catch (std::exception& e) {
 
-          BOOST_LOG_SEV(glg, err) << "EXCEPTION!! (row, col): (" << rowidx << ", " << colidx << "): " << e.what();
           std::cout << "EXCEPTION! (row, col): (" << rowidx << ", " << colidx << "): " << e.what() << std::endl;
 
-          // IS THIS THREAD SAFE??
-          // IS IT SAFE WITH MPI??
-          std::ofstream outfile;
-          outfile.open((modeldata.output_dir + "fail_log.txt").c_str(), std::ios_base::app); // Append mode
-          outfile << "EXCEPTION!! At pixel at (row, col): ("<<rowidx <<", "<<colidx<<") "<< e.what() <<"\n";
-          outfile.close();
-
-          // Write to fail_mask.nc file?? or json? might be good for visualization
-          write_status(run_status_fname, rowidx, colidx, -100); // <- what if this throws??
-          BOOST_LOG_SEV(glg, err) << "End of exception handler.";
+          // send (blocking?) cell fail message: row, col, exception
+          std::pair<std::pair<int, int>, std::string> msg(std::pair<int,int>(rowidx, colidx), e.what());
+          world.send(0, CELL_FAIL, msg);
 
         }
-      } else {
-        BOOST_LOG_SEV(glg, fatal) << "Skipping cell (" << rowidx << ", " << colidx << ")";
-        write_status(run_status_fname, rowidx, colidx, 0);
-      }
-      } else {
-        //std::cout << "id: " << id << " skipping cell (y,x) " << rowidx << "," << colidx << ")\n";
-      }
 
+        // send message to master ready to work
+        
+        std::cout << "worker " << id << " sending WORKER_READY message to process 0" << std::endl; 
+        world.send(0, WORKER_READY, id);
+        std::cout << "worker " << id << " completed blocking send of WORKER_READY message to process 0" << std::endl; 
+        
+      } else if (s.tag() == DIE_TAG) {
+        std::cout << "worker process " << id << " got the DIE command from master. Breaking listen loop.\n";
+        break;
+      }
     }
-    
-    // send message to all IO slaves slave saying that this worker is done  
-
-    for (int i=0; i<3; i++) {
-      std::stringstream ss;
-      ss << id;  
-      std::string this_rank_is_done = ss.str();
-      boost::mpi::communicator world;
-      boost::mpi::request reqs[1];    
-      reqs[0] = world.isend(i, 999, this_rank_is_done);
-      boost::mpi::wait_all(reqs, reqs+1);
-    }
-  
-  } else {
-    //std::cout << "Didn't find process " << id << " in the worker_slave set. Maybe its an io_slave?\n";
+    std::cout << "worker process " << id << " received a DIE command, exited loop and setting MPI_Barrier().\n";
+    MPI_Barrier(MPI_COMM_WORLD);
   }
-  std::cout << "END of MPI Run for id: " << id << "!\n";
-  
-  MPI_Barrier(MPI_COMM_WORLD);
-  MPI_Finalize();
-  return 0;
-}
+  return 0;  
+}  
+
 #else
 
   setup_outputs(args, modeldata, num_rows, num_cols);

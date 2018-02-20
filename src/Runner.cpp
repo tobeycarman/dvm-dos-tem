@@ -986,28 +986,36 @@ void Runner::add_to_package_for_IO_slave(const std::string & vname,
   int id = MPI::COMM_WORLD.Get_rank();
   int ntasks = MPI::COMM_WORLD.Get_size();
 
-  int designated_io_slave = 0;
-  if (vname < "IIII") {
-    designated_io_slave = 0;
-  } else if (vname < "UUUUU") {
-    designated_io_slave = 1;
-  } else {
-    int designated_io_slave = 2;
-  }
+  OutputDataNugget odn = OutputDataNugget(curr_filename, vname, starts, counts, values);
+  boost::mpi::communicator world;
+  std::vector<boost::mpi::request> reqs(1);
+  reqs[0] = world.isend(0, 686, odn);
+  boost::mpi::wait_all(reqs.begin(), reqs.end());
+
+
+
+
+//   int designated_io_slave = 0;
+//   if (vname < "IIII") {
+//     designated_io_slave = 0;
+//   } else if (vname < "UUUUU") {
+//     designated_io_slave = 1;
+//   } else {
+//     int designated_io_slave = 2;
+//   }
   //BOOST_LOG_SEV(glg, debug) << "id: " << id << " (of " << ntasks << ") is sending an MPI message --to--> " << designated_io_slave << "\n";
   //std::cout << "id: " << id << " (of " << ntasks << ") is sending an MPI message --to--> " << designated_io_slave << "\n";
  
   // need to pick designated IO slave based on vname...
    
 
-  OutputDataNugget odn = OutputDataNugget(curr_filename, vname, starts, counts, values);
   //std::cout << "OutputDataNugget.name=" << odn.vname <<  " OutputDataNugget.data.size()=" << odn.data.size() << "\n";
 
   //std::cout << "id: " << id << " is sending a message to rank: " << designated_io_slave << "\n";
-  boost::mpi::communicator world;
-  boost::mpi::request reqs[2];
-  reqs[0] = world.isend(designated_io_slave,686,odn);
-  boost::mpi::wait_all(reqs, reqs+1);
+//   boost::mpi::communicator world;
+//   boost::mpi::request reqs[2];
+//   reqs[0] = world.isend(designated_io_slave,686,odn);
+//   boost::mpi::wait_all(reqs, reqs+1);
 #else
   // pass - empty function body, this should never get called w/o MPI
 #endif
