@@ -4,6 +4,9 @@
 #ifndef UTIL_STRUCTS_H_
 #define UTIL_STRUCTS_H_
 
+#include <boost/serialization/string.hpp>
+#include <boost/serialization/vector.hpp>
+
 //template <typename T>
 struct OutputDataNugget {
   std::string file_path;

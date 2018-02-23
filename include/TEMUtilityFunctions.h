@@ -96,6 +96,8 @@ namespace temutil {
     std::cout << "\n";
   }
 
+  int get_uid(int seed);
+
   bool AlmostEqualRelative(double A, double B);
 
   void force_negative2zero(float& i);

@@ -20,6 +20,7 @@
 
 #ifdef WITHMPI
 #include <mpi.h>
+#include <boost/mpi.hpp>
 #endif
 
 using namespace std;
@@ -36,6 +37,11 @@ public:
   std::string describe_module_settings();
 
   void create_netCDF_output_files(int ysize, int xsize, const std::string & stage, int stage_year_count);
+
+#ifdef WITHMPI
+  //void set_io_data_communicator(const boost::mpi::communicator& comm);
+  boost::mpi::communicator* io_data_comm_ptr;
+#endif 
 
   string loop_order; // time-major or space-major
 
