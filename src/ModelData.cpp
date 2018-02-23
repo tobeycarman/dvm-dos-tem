@@ -100,6 +100,12 @@ void ModelData::update(ArgHandler const * arghandler) {
   }
 }
 
+// #ifdef WITHMPI
+// void ModelData::set_io_data_communicator(const boost::mpi::communicator& comm) {
+//   this->io_data_comm = comm;
+// }
+// #endif 
+
 
 ModelData::ModelData():force_cmt(-1) {
   set_envmodule(false);

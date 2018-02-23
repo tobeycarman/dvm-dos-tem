@@ -31,6 +31,7 @@
 #include <sstream>
 #include <ctime>
 #include <cstdlib>
+#include <stdio.h>
 #include <cstddef> // for offsetof()
 #include <exception>
 #include <map>
@@ -263,7 +264,7 @@ int main(int argc, char* argv[]){
   
   std::cout << "id: " << id << " WAITING FOR THE OutputSpec to BROADCAST!" << std::endl;
   MPI_Barrier(MPI::COMM_WORLD);
-  sleep(3);
+  sleep(1);
   
   // Use this for debugging....
   // int i = 0;
@@ -273,16 +274,36 @@ int main(int argc, char* argv[]){
   // fflush(stdout);
   // while (0 == i)
   //     sleep(5);
+  
+  // Make a separate  MPI communicator group for each type of message
+  boost::mpi::communicator cell_complete_comm = world.split(CELL_COMPLETE);
+  boost::mpi::communicator cell_fail_comm = world.split(CELL_FAIL);
+  boost::mpi::communicator io_data_comm = world.split(IO_DATA);
+  boost::mpi::communicator worker_ready_comm = world.split(WORKER_READY);
+  boost::mpi::communicator run_cell_comm = world.split(RUN_CELL);
+  boost::mpi::communicator die_tag_comm = world.split(DIE_TAG);
+  
+  // std::cout << "communicator OK?: " << ((cell_complete_comm)? 'Y':'N') << std::endl;
+  // std::cout << "communicator OK?: " << ((cell_fail_comm)? 'Y':'N') << std::endl;
+  // std::cout << "communicator OK?: " << ((io_data_comm)? 'Y':'N') << std::endl;
+  // std::cout << "communicator OK?: " << ((worker_ready_comm)? 'Y':'N') << std::endl;
+  // std::cout << "communicator OK?: " << ((run_cell_comm)? 'Y':'N') << std::endl;
+  // std::cout << "communicator OK?: " << ((die_tag_comm)? 'Y':'N') << std::endl;
 
+  modeldata.io_data_comm_ptr = &io_data_comm;
+  std::cout << "communicator OK?: " << ((*modeldata.io_data_comm_ptr)? 'Y':'N') << std::endl;
+  
   if (id == 0) {
 
-    // build list of processors (workers)
-    std::queue<int> worker_q;
+    std::queue<std::pair<int,int> > cell_q; // the cells to run
+    std::deque<int> avail_wq;               // the available (not busy) worker queue 
+    std::deque<int> busy_wq;                // the busy worker queue (empty
+    std::queue<std::pair<int,int> > done_q; // the finished cells
+
+    // build queue of available processors (workers)
     for (int i = 1; i < ntasks; i++) {
-      worker_q.push(i);
+      avail_wq.push_back(i);
     }
-    std::cout << "master process " << id << " found " << worker_q.size() << " processors.\n";
- 
  
     // build list of cells that need running
     typedef std::vector<int> vec;
@@ -291,10 +312,8 @@ int main(int argc, char* argv[]){
     vec2D::const_iterator row;
     vec::const_iterator col;
 
-    std::queue<std::pair<int,int> > cell_q;
-  
-    for(int rowidx=0; rowidx<num_rows; rowidx++){
-      for(int colidx=0; colidx<num_cols; colidx++){
+    for(int rowidx = 0; rowidx < num_rows; rowidx++){
+      for(int colidx = 0; colidx < num_cols; colidx++){
 
         bool mask_value = run_mask[rowidx].at(colidx);
 
@@ -303,172 +322,273 @@ int main(int argc, char* argv[]){
         }
       }
     }
-    std::cout << "master process " << id << " found " << cell_q.size() << " valid cells to run in mask.\n";
+    std::cout << "M[" << id << "]" << " cq: " << cell_q.size() << " dq: " << done_q.size() << " awq: " << avail_wq.size() << " bwq: " << busy_wq.size() << std::endl;
+    
+    int cell_q_original_size = cell_q.size();
  
-    std::cout << "master process looping until there are no cells left in the queue....\n";
+    // listen for a few types of messages
+    int N_MSG_TYPES = 4;
+    std::vector<boost::mpi::request> reqs(N_MSG_TYPES);
+
+    // setting up receiving data structures
+    OutputDataNugget odn;
+    std::pair<int, int> cell_complete;
+    std::string worker_ready;
+    std::pair<std::pair<int, int>, std::string> cell_fail;
+
+    // setup the listens
+    reqs[0] = cell_complete_comm.irecv(boost::mpi::any_source, boost::mpi::any_tag, cell_complete);
+    reqs[1] = io_data_comm.irecv(boost::mpi::any_source, boost::mpi::any_tag, odn);
+    reqs[2] = worker_ready_comm.irecv(boost::mpi::any_source, boost::mpi::any_tag, worker_ready);
+    reqs[3] = cell_fail_comm.irecv(boost::mpi::any_source, boost::mpi::any_tag, cell_fail);
+ 
+ 
+    std::cout << "M[" << id << "] master process looping until there are no cells left in the queue" << std::endl;
     while (1) {
-    
-      // send die message
-      if (cell_q.size() < 1) {
-        std::cout << "master process " << id << " has no more valid cells to run in mask. Sending kill message to all workers.\n";
-        for (int i = 0; i < worker_q.size(); i++) {
-          world.send(i, DIE_TAG, "Master is telling you to quit!");
-        }
-        std::cout << "master process " << id << " is breaking the listen loop..." << std::endl;
-        break;
-      }
-      
-       // listen for a few types of messages
-      int N_MSG_TYPES = 4;
-      std::vector<boost::mpi::request> reqs(N_MSG_TYPES);
 
-      // which might have these types of data
-      OutputDataNugget odn;
-      std::pair<int, int> cell_complete;
-      std::string worker_ready;
-      std::pair<std::pair<int, int>, std::string> cell_fail;
+      // FIRST, SOME QUEUE MANAGEMENT
+      if ( (!avail_wq.empty()) && (!cell_q.empty()) ) {
+        std::cout << "M[" << id << "] sending work order to process " << avail_wq.front() << " to run cell  [" << cell_q.front().first << ", " << cell_q.front().second << "]" << std::endl;
 
-      // setup the listens
-      reqs[0] = world.irecv(boost::mpi::any_source, IO_DATA, odn);
-      reqs[1] = world.irecv(boost::mpi::any_source, CELL_COMPLETE, cell_complete);
-      reqs[2] = world.irecv(boost::mpi::any_source, WORKER_READY, worker_ready);
-      reqs[3] = world.irecv(boost::mpi::any_source, CELL_FAIL, cell_fail);
-
-      // setup the stuff for checking messages      
-      typedef std::vector<boost::mpi::request>::iterator req_it;
-      std::pair<boost::mpi::status, req_it> curr_result;
-      curr_result = boost::mpi::wait_any(reqs.begin(), reqs.end());
-      boost::mpi::status s = curr_result.first;
-      boost::mpi::request r = *(curr_result.second);
-      
-
-      //std::cout << "id: " << id << " curr_result.first.source(): " << s.source() << " curr_result.first.tag(): " << s.tag() << "\n";
-      //std::cout << "s.source: " << s.source() << " s.tag: " << s.tag() << " s.error: " << s.error() << " s.cancelled: " << s.cancelled() << std::endl;
-    
-      if (s.tag() == CELL_COMPLETE) {
-
-        int rowidx = cell_complete.first;
-        int colidx = cell_complete.second;
-
-        std::cout << "master process " << id << " got message that cell " << rowidx << ", " << colidx << " is done.\n";
-    
-        write_status(run_status_fname, rowidx, colidx, 100);
-
-      } else if (s.tag() == IO_DATA) {
-
-        //std::cout << "master process " << id << " got data for " << odn.vname << " to write to netcdf file: " << odn.file_path << "\n";
-        temutil::write_var_to_netcdf(odn.vname, odn.file_path, odn.starts, odn.counts, odn.data);   
-
-      } else if (s.tag() == WORKER_READY) {
-
-        std::cout << "master process " << id << " got a message that worker " << worker_ready << " is ready to work!\n";
-        std::cout << "master process " << id << " sending (blocking) work order to " << worker_ready << "\n";
-        world.send(atoi(worker_ready.c_str()), RUN_CELL, cell_q.front());
+        run_cell_comm.send(avail_wq.front(), temutil::get_uid(run_cell_comm.rank()), cell_q.front());
+        busy_wq.push_back(avail_wq.front());
+        avail_wq.pop_front();
         cell_q.pop();
-        std::cout << "master process " << id << " done sending (blocking) work order to " << worker_ready << "\n";
-
-      } else if (s.tag() == CELL_FAIL) {
-
-        std::pair<int, int> coords = cell_fail.first;
-        std::string excp_msg = cell_fail.second;
-        int rowidx = coords.first;
-        int colidx = coords.second;
-    
-        std::cout << "master process " << id << " got a message that a cell FAILED! ("<<rowidx <<", "<<colidx<<") "<< excp_msg << "\n";
-
-        // write exception message to fail log 
-        std::ofstream outfile;
-        outfile.open((modeldata.output_dir + "fail_log.txt").c_str(), std::ios_base::app); // Append mode
-        outfile << "EXCEPTION!! At pixel at (row, col): ("<<rowidx <<", "<<colidx<<") "<< excp_msg <<"\n";
-        outfile.close();
-
-        write_status(run_status_fname, rowidx, colidx, -100);
- 
-      } else {
-        std::cout << "UNKNOWN TAG! " << s.tag() << std::endl;
       }
+      if ( avail_wq.empty() && (!busy_wq.empty()) && (!cell_q.empty()) ) {
+        //std::cout << "M[" << id << "] everyone is busy - just listen for incoming messages..." << std::endl;
+      }
+      if ( (!busy_wq.empty()) && (avail_wq.empty() || cell_q.empty()) ) {
+        //std::cout << "M[" << id << "] There are some busy processors and no available processors or no cells in queue - just listen... " << std::endl;
+      }
+      if ( done_q.size() == cell_q_original_size ) {
+        std::cout << "M[" << id << "]" << " cq: " << cell_q.size() << " dq: " << done_q.size() << " awq: " << avail_wq.size() << " bwq: " << busy_wq.size() << std::endl;
+        std::cout << "M[" << id << "] ALL CELLS DONE! Must be done, break listen loop! " << std::endl;
+        break; // break out of the listen loop so we can terminal the program.
+      }
+      if ( avail_wq.empty() && busy_wq.empty() && (!cell_q.empty()) ) {
+        std::cout << "M[" << id << "] ERROR! None busy, none available, but cells to do!" << std::endl;
+      }
+      
+      // Loop over all requests in reqs vector, testing results. If you find
+      // a good result, you gotta post another irecv!!
+      typedef std::vector<boost::mpi::request>::iterator req_it;
+      for (req_it it = reqs.begin(); it != reqs.end(); it++) {
+        
+        boost::optional<boost::mpi::status> s_opt = (*it).test();
+        if (s_opt) {
+          boost::mpi::status s = *s_opt;
+          //std::cout << "Got a good status object for reqs["<< it - reqs.begin() << "]" << std::endl;
+          //std::cout << "s.source: " << s.source() << " s.tag: " << s.tag() << " s.error: " << s.error() << " s.cancelled: " << s.cancelled() << std::endl;
 
+          if (it - reqs.begin() == 0) {
+
+            int rowidx = cell_complete.first;
+            int colidx = cell_complete.second;
+
+            std::cout << "M[" << id << "] got message that cell " << rowidx << ", " << colidx << " is done.\n";
+
+            write_status(run_status_fname, rowidx, colidx, 100);
+
+            std::cout << "M[" << id << "] posting new irecv" << std::endl;
+            reqs[0] = cell_complete_comm.irecv(boost::mpi::any_source, boost::mpi::any_tag, cell_complete);
+
+            // add the cell to the done_q
+            done_q.push(cell_complete);
+
+            // add the sender to the available q
+            avail_wq.push_back(s.source());
+
+            // remove sender from busy q
+            std::deque<int>::iterator w_it = std::find(busy_wq.begin(), busy_wq.end(), s.source());
+            if (w_it != busy_wq.end()) {
+              busy_wq.erase(w_it);
+            } else {
+              std::cout << "M[" << id << "] ERROR! couldn't find " << *w_it << " in busy_wq??" << std::endl;
+            }
+
+          }
+          
+          if (it - reqs.begin() == 1) {
+            //std::cout << "master process " << id << " got data for " << odn.vname << " to write to netcdf file: " << odn.file_path << "\n";
+            temutil::write_var_to_netcdf(odn.vname, odn.file_path, odn.starts, odn.counts, odn.data);   
+            reqs[1] = io_data_comm.irecv(boost::mpi::any_source, boost::mpi::any_tag, odn);
+
+          }  
+          
+          if (it - reqs.begin() == 2) {
+
+            std::cout << "M[" << id << "] got a message that worker " << worker_ready << " is ready to work!" << std::endl;
+            
+            // post another irecv           
+            reqs[2] = worker_ready_comm.irecv(boost::mpi::any_source, boost::mpi::any_tag, worker_ready);
+
+            // add the sender to the available q
+            avail_wq.push_back(s.source());
+
+            // remove sender from busy q
+            std::deque<int>::iterator w_it = std::find(busy_wq.begin(), busy_wq.end(), s.source());
+            if (w_it != busy_wq.end()) {
+              busy_wq.erase(w_it);
+            } else {
+              std::cout << "M[" << id << "] ERROR! couldn't find " << *w_it << " in busy_wq??" << std::endl;
+            }
+
+          }
+
+          if (it - reqs.begin() == 3) {
+            std::pair<int, int> coords = cell_fail.first;
+            std::string excp_msg = cell_fail.second;
+            int rowidx = coords.first;
+            int colidx = coords.second;
+    
+            std::cout << "M[" << id << "] got a message that a cell FAILED! ("<<rowidx <<", "<<colidx<<") "<< excp_msg << "\n";
+
+            // write exception message to fail log 
+            std::ofstream outfile;
+            outfile.open((modeldata.output_dir + "fail_log.txt").c_str(), std::ios_base::app); // Append mode
+            outfile << "EXCEPTION!! At pixel at (row, col): ("<<rowidx <<", "<<colidx<<") "<< excp_msg <<"\n";
+            outfile.close();
+
+            // write to the status file
+            write_status(run_status_fname, rowidx, colidx, -100);
+            
+            // post another irecv
+            reqs[3] = cell_fail_comm.irecv(boost::mpi::any_source, boost::mpi::any_tag, cell_fail);
+
+            done_q.push(cell_fail.first);
+
+            // add the sender to the available q
+            avail_wq.push_back(s.source()); 
+
+            // remove sender from busy q
+            std::deque<int>::iterator w_it = std::find(busy_wq.begin(), busy_wq.end(), s.source());
+            if (w_it != busy_wq.end()) {
+              busy_wq.erase(w_it);
+            } else {
+              std::cout << "M[" << id << "] ERROR! couldn't find " << *w_it << " in busy_wq??" << std::endl;
+            }            
+
+          }
+
+        } else {
+          // pass - none of the requests are ready to be processed...
+          //std::cout << "The request status returned an empty boost optional for reqs["<< it - reqs.begin() << "]" << std::endl;
+        }   
+      } // end for loop over all requests
+    
+    } // end listening loop
+    
+    // size avail_q, should == ntasks-1?
+    for (std::deque<int>::iterator it = avail_wq.begin(); it != avail_wq.end(); ++it) {
+      int proc_num = *it;
+      die_tag_comm.send(proc_num, temutil::get_uid(die_tag_comm.rank()), "Master is telling you to quit!");
     }
-    std::cout << "master process " << id << " out of listen loop. Setting MPI_Barrier().\n";
+    std::cout << "M[" << id << "] out main of listen loop. Setting MPI_Barrier(), on all communicators, waiting for slaves to complete." << std::endl;
+    
+
+    cell_complete_comm.barrier();
+    cell_fail_comm.barrier();
+    io_data_comm.barrier();
+    worker_ready_comm.barrier();
+    run_cell_comm.barrier();
+    die_tag_comm.barrier();
     MPI_Barrier(MPI_COMM_WORLD);
   }
   if (id > 0) {
-    std::cout << "worker process " << id << " setting up shop by sending (blocking) WORKER_READY message...\n";
+    std::cout << "w[" << id << "] setting up shop by sending (blocking) WORKER_READY message..." << std::endl;
     std::stringstream ss;
     ss << id;
-    world.send(0, WORKER_READY, ss.str());
-    std::cout << "worker process " << id << "sent WORKER_READY message.\n";
+    worker_ready_comm.send(0, temutil::get_uid(worker_ready_comm.rank()), ss.str());
+    std::cout << "w[" << id << "] sent WORKER_READY message." << std::endl;
+
+    // listen for a few types of messages
+    int N_MSG_TYPES = 2;
+    std::vector<boost::mpi::request> reqs(N_MSG_TYPES);
+
+    // which might have these types of data
+    std::pair<int, int> cell_to_run;
+    std::string die_command;
+
+    // setup the listens
+    reqs[0] = run_cell_comm.irecv(boost::mpi::any_source, boost::mpi::any_tag, cell_to_run);
+    reqs[1] = die_tag_comm.irecv(boost::mpi::any_source, boost::mpi::any_tag, die_command);
+
+    // loop for ever.
+    // inside, we loop over all requests, checking them and acting if necessary.
+    bool work_flag = true;
     while (1) {
-
-      // listen for a few types of messages
-      int N_MSG_TYPES = 2;
-      std::vector<boost::mpi::request> reqs(N_MSG_TYPES);
-
-
-      // which might have these types of data
-      std::pair<int, int> cell_to_run;
-      std::string die_command;
-
-      // setup the listens
-      reqs[0] = world.irecv(boost::mpi::any_source, RUN_CELL, cell_to_run);
-      reqs[1] = world.irecv(boost::mpi::any_source, DIE_TAG, die_command);
-
+      if (work_flag == false) {
+        break;
+      }
       typedef std::vector<boost::mpi::request>::iterator req_it;
-      std::pair<boost::mpi::status, req_it> curr_result;
-      curr_result = boost::mpi::wait_any(reqs.begin(), reqs.end());
-      boost::mpi::status s = curr_result.first;
-      boost::mpi::request r = *(curr_result.second);
 
-      std::cout << "id: " << id << " curr_result.first.source(): " << s.source() << " curr_result.first.tag(): " << s.tag() << "\n";
-
-      if (s.tag() == RUN_CELL) {
-      
-        int rowidx = cell_to_run.first;
-        int colidx = cell_to_run.second;
-        std::cout << "worker process " << id << " got message to run cell(row,col): " << rowidx << ", " << colidx << "\n";
-
-        try {
-
-          cell_stime = time(0);
-
-          std::cout << "worker " << id << " running cell (y,x): (" << rowidx << "," << colidx << ")" << std::endl;
-          advance_model(rowidx, colidx, modeldata, args->get_cal_mode(), pr_restart_fname, eq_restart_fname, sp_restart_fname, tr_restart_fname, sc_restart_fname);
-
-          cell_etime = time(0);
-          BOOST_LOG_SEV(glg, note) << "Finished cell " << rowidx << ", " << colidx << ". Writing status file...";
-          std::cout << "cell " << rowidx << ", " << colidx << " complete. time (secs): " << difftime(cell_etime, cell_stime) << std::endl;
-          
-          std::pair<int, int> msg(rowidx, colidx);
-
-          // send (blocking?) finished message with row, col
-          world.send(0, CELL_COMPLETE, msg);
-          std::cout << "worker " << id << " completed blocking send of CELL_COMPLETE message to process 0" << std::endl; 
+      for (req_it it = reqs.begin(); it != reqs.end(); it++) {
         
-        } catch (std::exception& e) {
+        //sleep(1);
+        boost::optional<boost::mpi::status> s_opt = (*it).test();
+        if (s_opt) {
+          boost::mpi::status s = *s_opt;
+          //std::cout << "Got a good status object for reqs["<< it - reqs.begin() << "]" << std::endl;
+          //std::cout << "s.source: " << s.source() << " s.tag: " << s.tag() << " s.error: " << s.error() << " s.cancelled: " << s.cancelled() << std::endl;
 
-          std::cout << "EXCEPTION! (row, col): (" << rowidx << ", " << colidx << "): " << e.what() << std::endl;
+          if (it - reqs.begin() == 0) {
+          
+            int rowidx = cell_to_run.first;
+            int colidx = cell_to_run.second;
+            std::cout << "w[" << id << "] got message to run cell(row,col): (" << rowidx << ", " << colidx << ")" << std::endl;
 
-          // send (blocking?) cell fail message: row, col, exception
-          std::pair<std::pair<int, int>, std::string> msg(std::pair<int,int>(rowidx, colidx), e.what());
-          world.send(0, CELL_FAIL, msg);
+            try {
+
+              cell_stime = time(0);
+
+              advance_model(rowidx, colidx, modeldata, args->get_cal_mode(), pr_restart_fname, eq_restart_fname, sp_restart_fname, tr_restart_fname, sc_restart_fname);
+
+              cell_etime = time(0);
+              std::cout << "w[" << id << "] cell " << rowidx << ", " << colidx << " complete. time (secs): " << difftime(cell_etime, cell_stime) << std::endl;
+          
+              sleep(10);
+              std::pair<int, int> msg(rowidx, colidx);
+              cell_complete_comm.send(0, temutil::get_uid(cell_complete_comm.rank()), msg);
+              std::cout << "w[" << id << "] completed blocking send of CELL_COMPLETE message to process 0" << std::endl; 
+        
+            } catch (std::exception& e) {
+
+              std::cout << "EXCEPTION! (row, col): (" << rowidx << ", " << colidx << "): " << e.what() << std::endl;
+              std::pair<std::pair<int, int>, std::string> msg(std::pair<int,int>(rowidx, colidx), e.what());
+              cell_fail_comm.send(0, temutil::get_uid(cell_fail_comm.rank()), msg);
+              std::cout << "w[" << id << "] completed blocking send of CELL_FAIL message to process 0" << std::endl; 
+
+            }
+            
+            // Post another listen...
+            reqs[0] = run_cell_comm.irecv(boost::mpi::any_source, boost::mpi::any_tag, cell_to_run);
+            
+          }
+          if (it - reqs.begin() == 1) {
+            std::cout << "w[" << id << "] got DIE command from process 0 not sure what to do!" << std::endl;
+            work_flag = false;
+            reqs[1] = die_tag_comm.irecv(boost::mpi::any_source, boost::mpi::any_tag, die_command);
+          }
+
 
         }
 
-        // send message to master ready to work
-        
-        std::cout << "worker " << id << " sending WORKER_READY message to process 0" << std::endl; 
-        world.send(0, WORKER_READY, id);
-        std::cout << "worker " << id << " completed blocking send of WORKER_READY message to process 0" << std::endl; 
-        
-      } else if (s.tag() == DIE_TAG) {
-        std::cout << "worker process " << id << " got the DIE command from master. Breaking listen loop.\n";
-        break;
       }
-    }
-    std::cout << "worker process " << id << " received a DIE command, exited loop and setting MPI_Barrier().\n";
+
+    } // end while listening loop
+    std::cout << "w[" << id << "] received a DIE command, exited loop and setting MPI_Barrier().\n";
+    cell_complete_comm.barrier();
+    cell_fail_comm.barrier();
+    io_data_comm.barrier();
+    worker_ready_comm.barrier();
+    run_cell_comm.barrier();
+    die_tag_comm.barrier();
     MPI_Barrier(MPI_COMM_WORLD);
   }
-  return 0;  
+  std::cout << "PROCESS[" << id << "] calling MPI_Finalize()" << std::endl;
+  MPI_Finalize();
+  return 0; 
 }  
 
 #else

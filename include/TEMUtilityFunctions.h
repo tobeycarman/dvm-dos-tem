@@ -85,6 +85,7 @@ namespace temutil {
     return y;
   }
 
+  int get_uid(int seed);
 
   bool AlmostEqualRelative(double A, double B);
 
