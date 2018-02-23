@@ -537,7 +537,12 @@ int main(int argc, char* argv[]){
               cell_etime = time(0);
               std::cout << "w[" << id << "] cell " << rowidx << ", " << colidx << " complete. time (secs): " << difftime(cell_etime, cell_stime) << std::endl;
           
+              // FIX THIS!! Totally arbitrary, but testing. this sleep
+              // gives time for all the data messages (io_data_comm) to flush
+              // before we send a message back to the master that this cell is
+              // done.
               sleep(10);
+
               std::pair<int, int> msg(rowidx, colidx);
               cell_complete_comm.send(0, temutil::get_uid(cell_complete_comm.rank()), msg);
               std::cout << "w[" << id << "] completed blocking send of CELL_COMPLETE message to process 0" << std::endl; 
@@ -546,6 +551,13 @@ int main(int argc, char* argv[]){
 
               std::cout << "EXCEPTION! (row, col): (" << rowidx << ", " << colidx << "): " << e.what() << std::endl;
               std::pair<std::pair<int, int>, std::string> msg(std::pair<int,int>(rowidx, colidx), e.what());
+
+              // FIX THIS!! Totally arbitrary, but testing. this sleep
+              // gives time for all the data messages (io_data_comm) to flush
+              // before we send a message back to the master that this cell is
+              // done.
+              sleep(10);
+
               cell_fail_comm.send(0, temutil::get_uid(cell_fail_comm.rank()), msg);
               std::cout << "w[" << id << "] completed blocking send of CELL_FAIL message to process 0" << std::endl; 
 
