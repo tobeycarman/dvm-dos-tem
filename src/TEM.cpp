@@ -334,6 +334,7 @@ int main(int argc, char* argv[]){
  
  
     std::cout << "M[" << id << "] master process looping until there are no cells left in the queue" << std::endl;
+    time_t most_recent_io_message_recv = time(0);
     while (1) {
 
       // FIRST, SOME QUEUE MANAGEMENT
@@ -352,9 +353,13 @@ int main(int argc, char* argv[]){
         //std::cout << "M[" << id << "] There are some busy processors and no available processors or no cells in queue - just listen... " << std::endl;
       }
       if ( done_q.size() == cell_q_original_size ) {
-        std::cout << "M[" << id << "]" << " cq: " << cell_q.size() << " dq: " << done_q.size() << " awq: " << avail_wq.size() << " bwq: " << busy_wq.size() << std::endl;
-        std::cout << "M[" << id << "] ALL CELLS DONE! Must be done, break listen loop! " << std::endl;
-        break; // break out of the listen loop so we can terminal the program.
+        //std::cout << "M[" << id << "]" << " cq: " << cell_q.size() << " dq: " << done_q.size() << " awq: " << avail_wq.size() << " bwq: " << busy_wq.size() << std::endl;
+        //std::cout << "M[" << id << "] ALL CELLS DONE! Must be done, break listen loop! " << std::endl;
+        time_t now = time(0);
+        time_t seconds_since_last_good_recv = difftime(now, most_recent_io_message_recv);
+        if ( seconds_since_last_good_recv > 10 ) {
+          break; // break out of the listen loop so we can terminal the program.
+        }
       }
       if ( avail_wq.empty() && busy_wq.empty() && (!cell_q.empty()) ) {
         std::cout << "M[" << id << "] ERROR! None busy, none available, but cells to do!" << std::endl;
@@ -368,6 +373,7 @@ int main(int argc, char* argv[]){
         boost::optional<boost::mpi::status> s_opt = (*it).test();
         if (s_opt) {
           boost::mpi::status s = *s_opt;
+          
           //std::cout << "Got a good status object for reqs["<< it - reqs.begin() << "]" << std::endl;
           //std::cout << "s.source: " << s.source() << " s.tag: " << s.tag() << " s.error: " << s.error() << " s.cancelled: " << s.cancelled() << std::endl;
 
@@ -400,6 +406,7 @@ int main(int argc, char* argv[]){
           }
           
           if (it - reqs.begin() == 1) {
+            most_recent_io_message_recv = time(0);
             //std::cout << "master process " << id << " got data for " << odn.vname << " to write to netcdf file: " << odn.file_path << "\n";
             temutil::write_var_to_netcdf(odn.vname, odn.file_path, odn.starts, odn.counts, odn.data);   
             reqs[1] = io_data_comm.irecv(boost::mpi::any_source, boost::mpi::any_tag, odn);
@@ -541,7 +548,7 @@ int main(int argc, char* argv[]){
               // gives time for all the data messages (io_data_comm) to flush
               // before we send a message back to the master that this cell is
               // done.
-              sleep(10);
+              //sleep(10);
 
               std::pair<int, int> msg(rowidx, colidx);
               cell_complete_comm.send(0, temutil::get_uid(cell_complete_comm.rank()), msg);
@@ -556,7 +563,7 @@ int main(int argc, char* argv[]){
               // gives time for all the data messages (io_data_comm) to flush
               // before we send a message back to the master that this cell is
               // done.
-              sleep(10);
+              //sleep(10);
 
               cell_fail_comm.send(0, temutil::get_uid(cell_fail_comm.rank()), msg);
               std::cout << "w[" << id << "] completed blocking send of CELL_FAIL message to process 0" << std::endl; 
