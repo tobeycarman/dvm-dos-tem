@@ -18,29 +18,35 @@ for variable in $(cat $OUTPUT_SPEC_PATH | cut -d, -f1)
 do
   echo "Processing variable: $variable"
   if [ $variable != 'Name' ] ; then   # ignore the header
-    # Loop through the various run modes
+
     for stage in $STAGES
     do
       echo "  --> stage: $stage"
-      # Loop through the various time steps
+
       for timestep in $TIMESTEPS
       do
         echo "  --> timestep: $timestep"
-        # Determine the file name of the outputs variable for the specific run mode and time step
+
+        # Determine the file name of the outputs variable for the specific
+        # run mode and time step
         filename="${variable}_${timestep}_${stage}.nc" # Not sure why we need {}??
-        # List all the output files for the variable in question in every output sub-directory (one directory = one sub-regional run)
         echo "  --> find $filename"
+
+        # List all the output files for the variable in question in every 
+        # output sub-directory (one directory = one sub-regional run)
         filelist=$(find $BATCH_DIR -maxdepth 4 -type f -name $filename)
-        
-        #echo "THE FILE LIST IS: $filelist"
-        # Concatenate all these files together
-        echo "merge files"
+        #echo "  --> filelist: $filelist"
+
         if [ ! -z "$filelist" ] ; then
+
+          # Concatenate all these files together
+          echo "merge files"
+
           # Something is messed up with my quoting, as this only works with 
           # the filelist variable **unquoted** which I think is bad practice.
           ncea -O -h -y avg $filelist "$FINAL_DIR/$filename"
         else
-          echo "nothing to do"
+          # echo "nothing to do; no files found..."
         fi
       done
     done
@@ -51,8 +57,7 @@ done
 filelist=$(find $BATCH_DIR -maxdepth 4 -type f -name "run_status.nc")
 echo "THE FILE LIST IS: $filelist"
 if [ ! -z "$filelist" ] ; then
-  # Something is messed up with my quoting, as this only works with 
-  # the filelist variable **unquoted** which I think is bad practice.
+  # NOTE: for some reason the 'avg' operator does not work with this file!!
   ncea -O -h -y max $filelist "$FINAL_DIR/run_status.nc"
 else
   echo "nothing to do - no run_status.nc files found?"
