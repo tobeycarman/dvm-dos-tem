@@ -266,8 +266,21 @@ if __name__ == '__main__':
           will honor any pixels that are alreay masked in the run-mask. As such, 
           you should probably conform the mask to the inputs before running the
           script again with this option to select only certain CMTs.'''))
+ 
+  parser.add_argument("--report", type=str, metavar=('TYPE'), default=None,
+    help=textwrap.dedent('''Print a report about the run mask.'''))
+
 
   args = parser.parse_args()
+
+  if args.report is not None:
+    # See stubbed out report function at top of file. Work in progress...
+    with nc.Dataset(args.file) as runmask:
+      print "{} total pixels".format(runmask.variables['run'].size)
+      print "{} nonzero pixels (run)".format(np.count_nonzero(runmask.variables['run']))
+      print "{} zeroed pixels (don't run)".format(np.count_nonzero(np.logical_not(runmask.variables['run']).astype(np.int)))
+    exit(0)
+
 
   if args.select_only_cmt:
     input_folder_path = args.select_only_cmt[0]
