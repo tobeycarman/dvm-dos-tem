@@ -37,7 +37,7 @@ import netCDF4 as nc    # for handling netcdf files
 # 6) Run this script.
 
 # USER SHOULD SET THIS VALUE
-IDEAL_CELLS_PER_GROUP = 16
+IDEAL_CELLS_PER_BATCH = 16
 
 
 # Look in the config file to figure out where the full-domain runmask is.
@@ -50,12 +50,12 @@ BASE_RUNMASK = j['IO']['runmask_file']
 with nc.Dataset(BASE_RUNMASK, 'r') as runmask:
   TOTAL_CELLS_TO_RUN = np.count_nonzero(runmask.variables['run'])  
 
-NGROUPS = TOTAL_CELLS_TO_RUN / IDEAL_CELLS_PER_GROUP
-if (TOTAL_CELLS_TO_RUN % IDEAL_CELLS_PER_GROUP != 0) or (TOTAL_CELLS_TO_RUN < IDEAL_CELLS_PER_GROUP):
-  print "Adding another group to pick up stragglers!"
-  NGROUPS += 1
+NBATCHES = TOTAL_CELLS_TO_RUN / IDEAL_CELLS_PER_BATCH
+if (TOTAL_CELLS_TO_RUN % IDEAL_CELLS_PER_BATCH != 0) or (TOTAL_CELLS_TO_RUN < IDEAL_CELLS_PER_BATCH):
+  print "Adding another batch to pick up stragglers!"
+  NBATCHES += 1
    
-print "NUMBER OF GROUPS: ", NGROUPS
+print "NUMBER OF BATCHES: ", NBATCHES
 
 
 
@@ -73,7 +73,7 @@ def mkdir_p(path):
 #
 # SETUP DIRECTORIES
 #
-for group_id in range(0, NGROUPS):
+for batch_id in range(0, NBATCHES):
 
   print "Removing any existing staging or batch run directories"
   if os.isdir('staging-batch-run')
@@ -82,16 +82,16 @@ for group_id in range(0, NGROUPS):
     shutil.rmtree('batch-run')
     
 
-  print "Making directories for group {}".format(group_id)
-  mkdir_p('staging-batch-run/group-{}'.format(group_id))
-  mkdir_p('batch-run/group-{}'.format(group_id))
+  print "Making directories for batch {}".format(batch_id)
+  mkdir_p('staging-batch-run/batch-{}'.format(batch_id))
+  mkdir_p('batch-run/batch-{}'.format(batch_id))
   
-  print "Copy run mask, config file, etc for group {}".format(group_id)
-  shutil.copy(BASE_RUNMASK,  'staging-batch-run/group-{}/'.format(group_id))
-  shutil.copy('config/config.js', 'staging-batch-run/group-{}/'.format(group_id))
+  print "Copy run mask, config file, etc for batch {}".format(batch_id)
+  shutil.copy(BASE_RUNMASK,  'staging-batch-run/batch-{}/'.format(batch_id))
+  shutil.copy('config/config.js', 'staging-batch-run/batch-{}/'.format(batch_id))
   
-  print "Reset the run mask for group {}".format(group_id)
-  with nc.Dataset('staging-batch-run/group-{}/run-mask.nc'.format(group_id), 'a') as runmask:
+  print "Reset the run mask for batch {}".format(batch_id)
+  with nc.Dataset('staging-batch-run/batch-{}/run-mask.nc'.format(batch_id), 'a') as runmask:
     runmask.variables['run'][:] = np.zeros(runmask.variables['run'].shape)
   
 #
@@ -102,47 +102,47 @@ with nc.Dataset(BASE_RUNMASK, 'r') as runmask:
   nz_xcoords = runmask.variables['run'][:].nonzero()[1]
 
 # For every cell that is turned on in the main run-mask, we assign this cell
-# to a group to be run, and turn on the corresponding cell in the group's
+# to a batch to be run, and turn on the corresponding cell in the batch's
 # run mask.
-print "Turning on pixels in each group's run mask..."
-group = 0
+print "Turning on pixels in each batch's run mask..."
+batch = 0
 cells_in_sublist = 0
 coord_list = zip(nz_ycoords, nz_xcoords)
 for i, cell in enumerate(coord_list):
 
-  with nc.Dataset("staging-batch-run/group-{}/run-mask.nc".format(group), 'a') as grp_runmask:
+  with nc.Dataset("staging-batch-run/batch-{}/run-mask.nc".format(batch), 'a') as grp_runmask:
     grp_runmask.variables['run'][cell] = True
     cells_in_sublist += 1
 
-  if (cells_in_sublist == IDEAL_CELLS_PER_GROUP) or (i == len(coord_list)-1):
-    print "Group {} will run {} cells...".format(group, cells_in_sublist)
-    group += 1
+  if (cells_in_sublist == IDEAL_CELLS_PER_BATCH) or (i == len(coord_list)-1):
+    print "Group {} will run {} cells...".format(batch, cells_in_sublist)
+    batch += 1
     cells_in_sublist = 0 
 
 
 #
 # SUMMARIZE
 #
-number_groups = group
-assert (NGROUPS == number_groups), "PROBLEM: Somthing is wrong with the group numbers."
-print "Split cells into {} run-groups...".format(number_groups)
+number_batches = batch
+assert (NBATCHES == number_batches), "PROBLEM: Somthing is wrong with the batch numbers."
+print "Split cells into {} batches...".format(number_batches)
 
 #
 # MODIFY THE CONFIG FILE FOR EACH BATCH
 #
-print "Modifying each group's config file; changing path to run mask and to output directory..."
-for group_num in range(0, number_groups):
+print "Modifying each batch's config file; changing path to run mask and to output directory..."
+for batch_num in range(0, number_batches):
 
-  with open('staging-batch-run/group-{}/config.js'.format(group_num), 'r') as f:
+  with open('staging-batch-run/batch-{}/config.js'.format(batch_num), 'r') as f:
     input_string = f.read()
   
   j = json.loads(re.sub('//.*\n','\n', input_string)) # Strip comments from json file
-  j['IO']['runmask_file'] = 'staging-batch-run/group-{}/run-mask.nc'.format(group_num)
-  j['IO']['output_dir'] = 'batch-run/group-{}/output/'.format(group_num)
+  j['IO']['runmask_file'] = 'staging-batch-run/batch-{}/run-mask.nc'.format(batch_num)
+  j['IO']['output_dir'] = 'batch-run/batch-{}/output/'.format(batch_num)
   
   output_str = json.dumps(j, indent=2, sort_keys=True)
 
-  with open('staging-batch-run/group-{}/config.js'.format(group_num), 'w') as f:
+  with open('staging-batch-run/batch-{}/config.js'.format(batch_num), 'w') as f:
     f.write(output_str)
 
 
@@ -150,18 +150,18 @@ for group_num in range(0, number_groups):
 #
 # SUBMIT SBATCH SCRIPT FOR EACH BATCH
 #
-for group in range(0, number_groups):
+for batch in range(0, number_batches):
 
-  with nc.Dataset("staging-batch-run/group-{}/run-mask.nc".format(group), 'r') as runmask:
-    cells_in_group = np.count_nonzero(runmask.variables['run'])
+  with nc.Dataset("staging-batch-run/batch-{}/run-mask.nc".format(batch), 'r') as runmask:
+    cells_in_batch = np.count_nonzero(runmask.variables['run'])
 
-  assert (cells_in_group > 0), "PROBLEM! Groups with no cells activated to run!"
+  assert (cells_in_batch > 0), "PROBLEM! Groups with no cells activated to run!"
   
   slurm_runner_scriptlet = textwrap.dedent('''\
   #!/bin/bash -l
 
   # Job name, for clarity
-  #SBATCH --job-name="ddt-batch-group-{0}"
+  #SBATCH --job-name="ddt-batch-{0}"
 
   # Reservation
   #SBATCH --reservation=snap_8 
@@ -184,15 +184,15 @@ for group in range(0, number_groups):
   --mca btl_tcp_if_include eth2 \
   --mca oob_tcp_if_include eth2 \
   -n {1} \
-  ./dvmdostem -f staging-batch-run/group-{0}/config.js -l disabled --max-output-volume 25GB -p 100 -e 1000 -s 250 -t 109 -n 91 
+  ./dvmdostem -f staging-batch-run/batch-{0}/config.js -l disabled --max-output-volume 25GB -p 100 -e 1000 -s 250 -t 109 -n 91 
 
-  '''.format(group, cells_in_group + 1))
-  print "Writing sbatch script for group {}".format(group)
-  with open("staging-batch-run/group-{}/slurm_runner.sh".format(group), 'w') as f:
+  '''.format(batch, cells_in_batch + 1))
+  print "Writing sbatch script for batch {}".format(batch)
+  with open("staging-batch-run/batch-{}/slurm_runner.sh".format(batch), 'w') as f:
     f.write(slurm_runner_scriptlet)
   
-  print "STUB::: Submitting sbatch script to squeue for group {}".format(group)
-  sbatch_output = subprocess.check_output(["sbatch", "staging-batch-run/group-{}/slurm_runner.sh".format(group)])
+  print "STUB::: Submitting sbatch script to squeue for batch {}".format(batch)
+  sbatch_output = subprocess.check_output(["sbatch", "staging-batch-run/batch-{}/slurm_runner.sh".format(batch)])
   print sbatch_output
 
 
