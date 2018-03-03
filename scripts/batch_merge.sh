@@ -32,7 +32,7 @@ do
         echo "  --> find $filename"
         filelist=$(find $BATCH_DIR -maxdepth 4 -type f -name $filename)
         
-        echo "THE FILE LIST IS: $filelist"
+        #echo "THE FILE LIST IS: $filelist"
         # Concatenate all these files together
         echo "merge files"
         if [ ! -z "$filelist" ] ; then
@@ -49,16 +49,18 @@ done
 
 # Next handle the run_status file
 filelist=$(find $BATCH_DIR -maxdepth 4 -type f -name "run_status.nc")
+echo "THE FILE LIST IS: $filelist"
 if [ ! -z "$filelist" ] ; then
   # Something is messed up with my quoting, as this only works with 
   # the filelist variable **unquoted** which I think is bad practice.
-  ncea -O -h -y avg $filelist "$FINAL_DIR/run_status.nc"
+  ncea -O -h -y max $filelist "$FINAL_DIR/run_status.nc"
 else
   echo "nothing to do - no run_status.nc files found?"
 fi
 
 # Finally, handle the fail log
 filelist=$(find $BATCH_DIR -maxdepth 4 -type f -name "fail_log.txt")
+echo "THE FILE LIST IS: $filelist"
 if [ ! -z "$filelist" ] ; then
   for f in $filelist
   do
