@@ -46,7 +46,7 @@ do
           # the filelist variable **unquoted** which I think is bad practice.
           ncea -O -h -y avg $filelist "$FINAL_DIR/$filename"
         else
-          # echo "nothing to do; no files found..."
+          echo "  --> nothing to do; no files found..."
         fi
       done
     done
