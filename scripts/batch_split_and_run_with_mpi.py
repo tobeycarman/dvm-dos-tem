@@ -35,9 +35,20 @@ import netCDF4 as nc    # for handling netcdf files
 # 5) Figure out how many cells you want per batch, and set the constant below.
 #
 # 6) Run this script.
+#
+# This script will split your run into however many batches are necesseray to
+# run all the cells and keep the max cells per batch in line with the constant
+# you set below. The script will setup two directory hierarchies: one for the 
+# outputs of the individual batch runs and one for the "staging" area for each
+# batch run. The staging area allows each run to have a different config file
+# and different run mask (which is what actually controls which cells are 
+# in which batch. Then the script will submit a job to slurm for each batch.
+# 
+# To process the outputs, use the "batch_merge.sh" script.
+
 
 # USER SHOULD SET THIS VALUE
-IDEAL_CELLS_PER_BATCH = 16
+IDEAL_CELLS_PER_BATCH = 15
 
 
 # Look in the config file to figure out where the full-domain runmask is.
@@ -73,14 +84,13 @@ def mkdir_p(path):
 #
 # SETUP DIRECTORIES
 #
-for batch_id in range(0, NBATCHES):
+print "Removing any existing staging or batch run directories"
+if os.path.isdir('staging-batch-run'):
+  shutil.rmtree('staging-batch-run')
+if os.path.isdir('batch-run'):
+  shutil.rmtree('batch-run')
 
-  print "Removing any existing staging or batch run directories"
-  if os.isdir('staging-batch-run')
-    shutil.rmtree('staging-batch-run')
-  if os.isdir('batch-run')
-    shutil.rmtree('batch-run')
-    
+for batch_id in range(0, NBATCHES):
 
   print "Making directories for batch {}".format(batch_id)
   mkdir_p('staging-batch-run/batch-{}'.format(batch_id))
