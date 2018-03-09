@@ -3394,13 +3394,33 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         std::vector<double> orgn;
         orgn.reserve(MAX_SOI_LAY);
         int il = 0;
-        Layer* currL = this->cohort.ground.toplayer;
-        while(currL != NULL){
-          // There is a problem here. Somehow toplayer includes snow, so we end up
-          // with 26 layers, while the orgn vector only has room for 22. Not sure how to 
-          // fix it.
-          //std::cout << "ORGN BY LAYER["<<il<<"] is: "<< currL->orgn << "\n";
-          //orgn[il] = currL->orgn;
+        Layer* currL = this->cohort.ground.fstsoill;
+        while(currL != NULL) {
+
+          if ( (currL == this->cohort.ground.lstsoill) && ( !(currL->prevl->isSoil) || (currL->nextl->isSoil) ) ) {
+            BOOST_LOG_SEV(glg, fatal) << "ERROR - Something is wrong with the soil layer pointers!!";
+          }
+          if (il >= MAX_SOI_LAY) {
+            BOOST_LOG_SEV(glg, err) << "PROBLEM! More than " << MAX_SOI_LAY
+                                    << " layers.! il[" << il << "] "
+                                    << " y:" << rowidx << " x:" << colidx
+                                    << " year: " << year
+                                    << " currL->orgn is:" << currL->orgn;
+          }
+
+          orgn.at(il) = currL->orgn; // .at() has bounds checking and will 
+                                     // throw exception when there is an 
+                                     // error
+
+          if ( (currL == this->cohort.ground.lstsoill) && (currL->prevl->isSoil) && (!(currL->nextl->isSoil)) ) {
+            // Can't rely completely on NULL to break the loop. There can
+            // be instances where there are rock layers (non NULL) below the 
+            // soil layer. So we check that the previous layer is soil, the
+            // current layer is the last soil layer, and the next layer is not
+            // soil.
+            break;
+          }
+
           il++;
           currL = currL->nextl;
         }
@@ -3503,13 +3523,37 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
         std::vector<double> soilc;
         soilc.reserve(MAX_SOI_LAY);
         int il = 0;
-        Layer* currL = this->cohort.ground.toplayer;
-        while(currL != NULL){
-          soilc[il] = currL->rawc;
+
+        Layer* currL = this->cohort.ground.fstsoill;
+        while(currL != NULL) {
+
+          if ( (currL == this->cohort.ground.lstsoill) && ( !(currL->prevl->isSoil) || (currL->nextl->isSoil) ) ) {
+            BOOST_LOG_SEV(glg, fatal) << "ERROR - Something is wrong with the soil layer pointers!!";
+          }
+          if (il >= MAX_SOI_LAY) {
+            BOOST_LOG_SEV(glg, err) << "PROBLEM! More than " << MAX_SOI_LAY
+                                    << " layers.! il[" << il << "] "
+                                    << " y:" << rowidx << " x:" << colidx
+                                    << " year: " << year
+                                    << " currL->rawc is:" << currL->rawc;
+          }
+
+          soilc.at(il) = currL->rawc; // .at() has bounds checking and will 
+                                      // throw exception when there is an 
+                                      // error
+
+          if ( (currL == this->cohort.ground.lstsoill) && (currL->prevl->isSoil) && (!(currL->nextl->isSoil)) ) {
+            // Can't rely completely on NULL to break the loop. There can
+            // be instances where there are rock layers (non NULL) below the 
+            // soil layer. So we check that the previous layer is soil, the
+            // current layer is the last soil layer, and the next layer is not
+            // soil.
+            break;
+          }
+
           il++;
           currL = currL->nextl;
         }
-
         io_wrapper(svname, curr_filename, soilstart4, soilcount4, soilc);
       }
       //Total, instead of by layer
