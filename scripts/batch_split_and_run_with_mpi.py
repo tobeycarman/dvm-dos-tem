@@ -36,7 +36,7 @@ import netCDF4 as nc    # for handling netcdf files
 #
 # 6) Run this script.
 #
-# This script will split your run into however many batches are necesseray to
+# This script will split your run into however many batches are necessary to
 # run all the cells and keep the max cells per batch in line with the constant
 # you set below. The script will setup two directory hierarchies: one for the 
 # outputs of the individual batch runs and one for the "staging" area for each
@@ -48,7 +48,7 @@ import netCDF4 as nc    # for handling netcdf files
 
 
 # USER SHOULD SET THIS VALUE
-IDEAL_CELLS_PER_BATCH = 15
+IDEAL_CELLS_PER_BATCH = 5
 
 
 # Look in the config file to figure out where the full-domain runmask is.
@@ -204,6 +204,5 @@ for batch in range(0, number_batches):
   print "STUB::: Submitting sbatch script to squeue for batch {}".format(batch)
   sbatch_output = subprocess.check_output(["sbatch", "staging-batch-run/batch-{}/slurm_runner.sh".format(batch)])
   print sbatch_output
-
 
 
