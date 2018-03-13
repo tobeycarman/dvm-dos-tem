@@ -283,16 +283,44 @@ int main(int argc, char* argv[]){
   modeldata.io_data_comm_ptr = &io_data_comm;
   std::cout << "communicator OK?: " << ((*modeldata.io_data_comm_ptr)? 'Y':'N') << std::endl;
   
-  if (id == 0) {
+  if (ntasks == 1) {
+    std::cout << "ERROR! Compiled with MPI, but only launched with one processor!! Try again!\n";
+    exit(-1);
+  }
+  if (ntasks == 2) {
+    std::cout << "WARNING! Only marginal performance improvement expected with 2 processors. Try launching the job with more cores!\n";
+  }
+
+  double PERCENT_IO_MASTERS = 0.25; // .16 is 1/6th
+
+  int N_IO_MASTERS = int(ntasks*PERCENT_IO_MASTERS);
+  int N_WORKERS = ntasks - N_IO_MASTERS;
+  if (N_IO_MASTERS < 1) {
+    N_IO_MASTERS = 1;
+    N_WORKERS = ntasks-1;
+  }
+
+  // The first N ranks are IO Masters
+  std::set<int> io_masters;
+  for (int i = 0; i < N_IO_MASTERS; i++) {
+    io_masters.insert(i);
+  }
+
+  // This could be simplified to: if (id < N_IO_MASTERS) {}
+  if (io_masters.find(id) != io_masters.end()) {
+
+    std::cout << "IO_MASTER PROCESS [" << id <<"] --- WAITING FOR MESSAGES FROM WORKERS! ---" << std::endl;
 
     std::queue<std::pair<int,int> > cell_q; // the cells to run
     std::deque<int> avail_wq;               // the available (not busy) worker queue 
-    std::deque<int> busy_wq;                // the busy worker queue (empty
+    std::deque<int> busy_wq;                // the busy worker queue
     std::queue<std::pair<int,int> > done_q; // the finished cells
 
     // build queue of available processors (workers)
-    for (int i = 1; i < ntasks; i++) {
-      avail_wq.push_back(i);
+    for (int i = N_IO_MASTERS; i < ntasks; i++) {
+      if ( (i % N_IO_MASTERS) == id ) {
+        avail_wq.push_back(i);
+      }
     }
  
     // build list of cells that need running
@@ -305,11 +333,15 @@ int main(int argc, char* argv[]){
     for(int rowidx = 0; rowidx < num_rows; rowidx++){
       for(int colidx = 0; colidx < num_cols; colidx++){
 
-        bool mask_value = run_mask[rowidx].at(colidx);
+        int idx = (rowidx * run_mask.size()) + colidx;
 
-        if (true == mask_value) {
-          cell_q.push(std::pair<int,int>(rowidx, colidx));
-        }
+        bool mask_value = run_mask[rowidx].at(colidx);
+        std::cout << "M[" << id << "]" << "ABSOLUTE IDX: " << idx << "idx % N_IO_MASTERS: " << idx % N_IO_MASTERS <<  std::endl;
+        if ( ((idx % N_IO_MASTERS) == id) ) {
+          if (true == mask_value) {
+            cell_q.push(std::pair<int,int>(rowidx, colidx));
+          }
+        } // else leave it for another worker
       }
     }
     std::cout << "M[" << id << "]" << " cq: " << cell_q.size() << " dq: " << done_q.size() << " awq: " << avail_wq.size() << " bwq: " << busy_wq.size() << std::endl;
@@ -492,11 +524,16 @@ int main(int argc, char* argv[]){
     die_tag_comm.barrier();
     MPI_Barrier(MPI_COMM_WORLD);
   }
-  if (id > 0) {
+
+  if (id >= N_IO_MASTERS) {
+    int designated_IO_master;
+    designated_IO_master = id % N_IO_MASTERS;
+  
+    std::cout << "w[" << id << "] designated IO Master: " << designated_IO_master << std::endl;
     std::cout << "w[" << id << "] setting up shop by sending (blocking) WORKER_READY message..." << std::endl;
     std::stringstream ss;
     ss << id;
-    worker_ready_comm.send(0, temutil::get_uid(worker_ready_comm.rank()), ss.str());
+    worker_ready_comm.send(designated_IO_master, temutil::get_uid(worker_ready_comm.rank()), ss.str());
     std::cout << "w[" << id << "] sent WORKER_READY message." << std::endl;
 
     // listen for a few types of messages
@@ -551,7 +588,7 @@ int main(int argc, char* argv[]){
               //sleep(10);
 
               std::pair<int, int> msg(rowidx, colidx);
-              cell_complete_comm.send(0, temutil::get_uid(cell_complete_comm.rank()), msg);
+              cell_complete_comm.send(designated_IO_master, temutil::get_uid(cell_complete_comm.rank()), msg);
               std::cout << "w[" << id << "] completed blocking send of CELL_COMPLETE message to process 0" << std::endl; 
         
             } catch (std::exception& e) {
@@ -565,7 +602,7 @@ int main(int argc, char* argv[]){
               // done.
               //sleep(10);
 
-              cell_fail_comm.send(0, temutil::get_uid(cell_fail_comm.rank()), msg);
+              cell_fail_comm.send(designated_IO_master, temutil::get_uid(cell_fail_comm.rank()), msg);
               std::cout << "w[" << id << "] completed blocking send of CELL_FAIL message to process 0" << std::endl; 
 
             }
