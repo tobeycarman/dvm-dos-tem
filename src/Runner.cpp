@@ -941,18 +941,21 @@ void Runner::add_to_package_for_IO_slave(const std::string & vname,
                                          const T & values) {
 #ifdef WITHMPI
 
-  OutputDataNugget odn = OutputDataNugget(curr_filename, vname, starts, counts, values);
-
   // int id = MPI::COMM_WORLD.Get_rank();
   // int ntasks = MPI::COMM_WORLD.Get_size();
 
+  OutputDataNugget odn = OutputDataNugget(curr_filename, vname, starts, counts, values);
 
+  // Get a unique tag for this message (so boost serializing can break it into
+  // multiple messages and be sure to correctly re-build it based on tag).
   int tag = temutil::get_uid(this->md.io_data_comm_ptr->rank());
 
-  
-  this->md.io_data_comm_ptr->send(0, tag, odn);
-  
+  // Could set this based on this processes rank??
+  // OR could set this based on the variable name??
+  int designated_IO_process = 0;
 
+  // SEND IT!
+  this->md.io_data_comm_ptr->send(designated_IO_process, tag, odn);
 
   //BOOST_LOG_SEV(glg, debug) << "id: " << id << " (of " << ntasks << ") is sending an MPI message --to--> " << designated_io_slave << "\n";
   //std::cout << "id: " << id << " (of " << ntasks << ") is sending an MPI message --to--> " << designated_io_slave << "\n";
