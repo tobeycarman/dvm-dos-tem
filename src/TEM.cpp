@@ -235,15 +235,15 @@ int main(int argc, char* argv[]){
   int RUN_CELL = 222;
   int DIE_TAG = 888;
 
-  // Intended for passing argc and argv, the arguments to MPI_Init
-  // are currently unnecessary.
   MPI_Init(NULL, NULL);
 
   int id = MPI::COMM_WORLD.Get_rank();
   int ntasks = MPI::COMM_WORLD.Get_size();
   
-  // Limit output directory and file setup to a single process.
-  // variable 'id' is set to 0 if not built with MPI.
+
+  // Limit output directory and file setup to a single process. Even if we have 
+  // more than one "IO master" process, then only one of these processes needs
+  // to create the file.
   if ( id == 0 ) {
     setup_outputs(args, modeldata, num_rows, num_cols);
   }
@@ -276,6 +276,14 @@ int main(int argc, char* argv[]){
   //     sleep(5);
   
   // Make a separate  MPI communicator group for each type of message
+  // Not sure how necessary this is, but I tried it because using boost and 
+  // the serialization for message passing, it seems to be important that no
+  // two messages have identical tags because boost uses the tag internally to 
+  // split the message into a header (with size info) and data payload. If
+  // there are two messages with the same tag, then the headers/payloads get 
+  // messed up and the program crashes with a seg fault. The idea here is that
+  // by having differrent communicator groups, the "tag" space for each group
+  // is full size, so maybe this will reduce the possibility for tag collisions?
   boost::mpi::communicator cell_complete_comm = world.split(CELL_COMPLETE);
   boost::mpi::communicator cell_fail_comm = world.split(CELL_FAIL);
   boost::mpi::communicator io_data_comm = world.split(IO_DATA);
@@ -283,13 +291,6 @@ int main(int argc, char* argv[]){
   boost::mpi::communicator run_cell_comm = world.split(RUN_CELL);
   boost::mpi::communicator die_tag_comm = world.split(DIE_TAG);
   
-  // std::cout << "communicator OK?: " << ((cell_complete_comm)? 'Y':'N') << std::endl;
-  // std::cout << "communicator OK?: " << ((cell_fail_comm)? 'Y':'N') << std::endl;
-  // std::cout << "communicator OK?: " << ((io_data_comm)? 'Y':'N') << std::endl;
-  // std::cout << "communicator OK?: " << ((worker_ready_comm)? 'Y':'N') << std::endl;
-  // std::cout << "communicator OK?: " << ((run_cell_comm)? 'Y':'N') << std::endl;
-  // std::cout << "communicator OK?: " << ((die_tag_comm)? 'Y':'N') << std::endl;
-
   modeldata.io_data_comm_ptr = &io_data_comm;
   std::cout << "communicator OK?: " << ((*modeldata.io_data_comm_ptr)? 'Y':'N') << std::endl;
   
@@ -346,7 +347,6 @@ int main(int argc, char* argv[]){
         int idx = (rowidx * run_mask.size()) + colidx;
 
         bool mask_value = run_mask[rowidx].at(colidx);
-        std::cout << "M[" << id << "]" << "ABSOLUTE IDX: " << idx << "idx % N_IO_MASTERS: " << idx % N_IO_MASTERS <<  std::endl;
         if ( ((idx % N_IO_MASTERS) == id) ) {
           if (true == mask_value) {
             cell_q.push(std::pair<int,int>(rowidx, colidx));

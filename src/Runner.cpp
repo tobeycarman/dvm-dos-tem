@@ -940,53 +940,23 @@ void Runner::add_to_package_for_IO_slave(const std::string & vname,
                                          const std::vector<size_t> & counts, 
                                          const T & values) {
 #ifdef WITHMPI
-//   int id = MPI::COMM_WORLD.Get_rank();
-//   int ntasks = MPI::COMM_WORLD.Get_size();
 
   OutputDataNugget odn = OutputDataNugget(curr_filename, vname, starts, counts, values);
 
-  //boost::mpi::communicator world;
-  //int IO_DATA = 686;
-  //boost::mpi::group io_data_group = world.group();  
+  // int id = MPI::COMM_WORLD.Get_rank();
+  // int ntasks = MPI::COMM_WORLD.Get_size();
 
 
-  //boost::mpi::communicator io_data_comm(world, io_data_group);
-  //std::cout << "communicator OK?: " << ((md.io_data_comm_ptr)? 1 : 0) << std::endl;
   int tag = temutil::get_uid(this->md.io_data_comm_ptr->rank());
 
-  //std::cout << "id: " << md.io_data_comm_ptr->rank() << " tag: " << tag << std::endl;
-  //std::vector<boost::mpi::request> reqs(1);
-  //reqs[0] = this->md.io_data_comm_ptr->isend(0, tag, odn);
-  //boost::mpi::wait_all(reqs.begin(), reqs.end());
   
   this->md.io_data_comm_ptr->send(0, tag, odn);
   
-  //sleep(1);
-  
 
 
-
-//   int designated_io_slave = 0;
-//   if (vname < "IIII") {
-//     designated_io_slave = 0;
-//   } else if (vname < "UUUUU") {
-//     designated_io_slave = 1;
-//   } else {
-//     int designated_io_slave = 2;
-//   }
   //BOOST_LOG_SEV(glg, debug) << "id: " << id << " (of " << ntasks << ") is sending an MPI message --to--> " << designated_io_slave << "\n";
   //std::cout << "id: " << id << " (of " << ntasks << ") is sending an MPI message --to--> " << designated_io_slave << "\n";
  
-  // need to pick designated IO slave based on vname...
-   
-
-  //std::cout << "OutputDataNugget.name=" << odn.vname <<  " OutputDataNugget.data.size()=" << odn.data.size() << "\n";
-
-  //std::cout << "id: " << id << " is sending a message to rank: " << designated_io_slave << "\n";
-//   boost::mpi::communicator world;
-//   boost::mpi::request reqs[2];
-//   reqs[0] = world.isend(designated_io_slave,686,odn);
-//   boost::mpi::wait_all(reqs, reqs+1);
 #else
   // pass - empty function body, this should never get called w/o MPI
 #endif

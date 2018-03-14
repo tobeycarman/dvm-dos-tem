@@ -75,7 +75,9 @@ void ArgHandler::parse(int argc, char** argv) {
       "directories. Facilitates parallel runs, but may make the "
       "calibration-viewer.py more difficult to work with (must pass/set the "
       "PID tag so that the calibration-viewer.py knows where to find the json "
-      "files.)")
+      "files.) NOTE: As of 03-2018 This may be deprecated? This was not "
+      "developed in conjunction with the MPI parallelism added in spring 2018.")
+
 
     ("pr-yrs,p", boost::program_options::value<int>(&pr_yrs)
        ->default_value(10),
