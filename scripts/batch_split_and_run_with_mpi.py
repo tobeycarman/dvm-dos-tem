@@ -54,7 +54,7 @@ IDEAL_CELLS_PER_BATCH = 5
 # Look in the config file to figure out where the full-domain runmask is.
 with open("config/config.js", 'r') as f:
     input_str = f.read()
-j = json.loads(re.sub('//.*\n','\n', input_str))
+j = json.loads(re.sub('//.*\n','\n', input_str)) # Strip comments
 BASE_RUNMASK = j['IO']['runmask_file']
 
 # Figure out how many batches are necessary to complete the full run.
@@ -171,7 +171,7 @@ for batch in range(0, number_batches):
   #!/bin/bash -l
 
   # Job name, for clarity
-  #SBATCH --job-name="ddt-batch-{0}"
+  #SBATCH --job-name="ddt-batch-{batchid}"
 
   # Reservation
   #SBATCH --reservation=snap_8 
@@ -180,8 +180,8 @@ for batch in range(0, number_batches):
   #SBATCH -p main
 
   # Number of MPI tasks
-  #SBATCH -n {1}
-
+  #SBATCH -n {number_processors}  # Use when using MPI, otherwise, use -n 1
+  
   echo $SBATCH_RESERVATION
   echo $SLURM_JOB_NODELIST
 
@@ -193,10 +193,11 @@ for batch in range(0, number_batches):
   mpirun --mca btl self,tcp \
   --mca btl_tcp_if_include eth2 \
   --mca oob_tcp_if_include eth2 \
-  -n {1} \
-  ./dvmdostem -f staging-batch-run/batch-{0}/config.js -l disabled --max-output-volume 25GB -p 100 -e 1000 -s 250 -t 109 -n 91 
+  -n {number_processors} \
+  ./dvmdostem -f staging-batch-run/batch-{batchid}/config.js -l disabled --max-output-volume 25GB -p 100 -e 1000 -s 250 -t 109 -n 91 
 
-  '''.format(batch, cells_in_batch + 1))
+  '''.format(batchid=batch, number_processors=(cells_in_batch+1)))
+
   print "Writing sbatch script for batch {}".format(batch)
   with open("staging-batch-run/batch-{}/slurm_runner.sh".format(batch), 'w') as f:
     f.write(slurm_runner_scriptlet)
