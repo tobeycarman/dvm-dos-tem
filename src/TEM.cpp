@@ -240,6 +240,31 @@ int main(int argc, char* argv[]){
   int id = MPI::COMM_WORLD.Get_rank();
   int ntasks = MPI::COMM_WORLD.Get_size();
   
+  if (ntasks == 1) {
+    std::cout << "ERROR! Compiled with MPI, but only launched with one "
+              << "processor!! Try again!" << std::endl;
+    exit(-1);
+  }
+  if (ntasks == 2) {
+    std::cout << "WARNING! Only marginal performance improvement expected with "
+              << "2 processors. Try launching the job with more processors!" << std::endl;
+  }
+
+  double PERCENT_IO_MASTERS = 0.20; // percentage of total processors to dedicate to IO
+
+  int N_IO_MASTERS = int(ntasks*PERCENT_IO_MASTERS); // cast, same as floor for positive
+  int N_WORKERS = ntasks - N_IO_MASTERS;
+  if (N_IO_MASTERS < 1) {
+    N_IO_MASTERS = 1;
+    N_WORKERS = ntasks-1;
+  }
+
+  // The first N ranks are IO Masters. Holding the master IDs in a set could
+  // allow for master ID's to be non-consecutive?
+  std::set<int> io_masters;
+  for (int i = 0; i < N_IO_MASTERS; i++) {
+    io_masters.insert(i);
+  }
 
   // Limit output directory and file setup to a single process. Even if we have 
   // more than one "IO master" process, then only one of these processes needs
@@ -294,29 +319,6 @@ int main(int argc, char* argv[]){
   modeldata.io_data_comm_ptr = &io_data_comm;
   std::cout << "communicator OK?: " << ((*modeldata.io_data_comm_ptr)? 'Y':'N') << std::endl;
   
-  if (ntasks == 1) {
-    std::cout << "ERROR! Compiled with MPI, but only launched with one processor!! Try again!\n";
-    exit(-1);
-  }
-  if (ntasks == 2) {
-    std::cout << "WARNING! Only marginal performance improvement expected with 2 processors. Try launching the job with more cores!\n";
-  }
-
-  double PERCENT_IO_MASTERS = 0.25; // .16 is 1/6th
-
-  int N_IO_MASTERS = int(ntasks*PERCENT_IO_MASTERS);
-  int N_WORKERS = ntasks - N_IO_MASTERS;
-  if (N_IO_MASTERS < 1) {
-    N_IO_MASTERS = 1;
-    N_WORKERS = ntasks-1;
-  }
-
-  // The first N ranks are IO Masters
-  std::set<int> io_masters;
-  for (int i = 0; i < N_IO_MASTERS; i++) {
-    io_masters.insert(i);
-  }
-
   // This could be simplified to: if (id < N_IO_MASTERS) {}
   if (io_masters.find(id) != io_masters.end()) {
 
