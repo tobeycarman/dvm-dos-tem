@@ -395,7 +395,11 @@ void ModelData::create_netCDF_output_files(int ysize, int xsize, const std::stri
 
       BOOST_LOG_SEV(glg, debug) << "Adding dimensions...";
       // All variables will have dimensions: time, y, x
-      temutil::nc( nc_def_dim(ncid, "time", stage_timestep_count, &timeD) );
+      if (stage_timestep_count > 0) {
+        temutil::nc( nc_def_dim(ncid, "time", stage_timestep_count, &timeD) );
+      } else {
+        temutil::nc( nc_def_dim(ncid, "time", NC_UNLIMITED, &timeD) );
+      }
       temutil::nc( nc_def_dim(ncid, "y", ysize, &yD) );
       temutil::nc( nc_def_dim(ncid, "x", xsize, &xD) );
 
