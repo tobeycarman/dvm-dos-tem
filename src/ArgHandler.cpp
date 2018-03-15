@@ -81,7 +81,7 @@ void ArgHandler::parse(int argc, char** argv) {
       "developed in conjunction with the MPI parallelism added in spring 2018.")
 
 
-    ("full-size-outputs", boost::program_options::bool_switch(&full_size_outputs),
+    ("outputs-time-unlimited", boost::program_options::bool_switch(&outputs_time_unlimited),
      "Force outputs to full size at creation time (no unlimited dimension)")
 
     ("pr-yrs,p", boost::program_options::value<int>(&pr_yrs)
