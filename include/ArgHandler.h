@@ -17,6 +17,8 @@ class ArgHandler {
 	boost::program_options::options_description desc;
 	boost::program_options::variables_map varmap;
 
+  bool outputs_time_unlimited;
+
   int pr_yrs;
   int eq_yrs;
   int sp_yrs;
@@ -52,6 +54,8 @@ public:
 	void parse(int argc, char** argv);
 	void verify();
 	void show_help();
+
+  inline const bool get_outputs_time_unlimited() const {return outputs_time_unlimited;};
 
   inline int get_pr_yrs() const {return pr_yrs;};
   inline int get_eq_yrs() const {return eq_yrs;};

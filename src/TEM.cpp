@@ -1219,31 +1219,31 @@ void setup_outputs(ArgHandler * args, ModelData& modeldata, int num_rows, int nu
       if(modeldata.eq_yrs > 100 && modeldata.daily_netcdf_outputs.size() > 0) {
         BOOST_LOG_SEV(glg, fatal) << "Daily outputs specified with EQ run greater than 100 years! Reconsider...";
       }
-      if (args->get_full_size_outputs()) {
-        modeldata.create_netCDF_output_files(num_rows, num_cols, "eq", modeldata.eq_yrs);
-      } else {
+      if (args->get_outputs_time_unlimited()) {
         modeldata.create_netCDF_output_files(num_rows, num_cols, "eq", -1);
+      } else {
+        modeldata.create_netCDF_output_files(num_rows, num_cols, "eq", modeldata.eq_yrs);
       }
     }
     if(modeldata.sp_yrs > 0 && modeldata.nc_sp){
-      if (args->get_full_size_outputs()) {
-        modeldata.create_netCDF_output_files(num_rows, num_cols, "sp", modeldata.sp_yrs);
-      } else {
+      if (args->get_outputs_time_unlimited()) {
         modeldata.create_netCDF_output_files(num_rows, num_cols, "sp", -1);
+      } else {
+        modeldata.create_netCDF_output_files(num_rows, num_cols, "sp", modeldata.sp_yrs);
       }
     }
     if(modeldata.tr_yrs > 0 && modeldata.nc_tr){
-      if (args->get_full_size_outputs()) {
-        modeldata.create_netCDF_output_files(num_rows, num_cols, "tr", modeldata.tr_yrs);
-      } else {
+      if (args->get_outputs_time_unlimited()) {
         modeldata.create_netCDF_output_files(num_rows, num_cols, "tr", -1);
+      } else {
+        modeldata.create_netCDF_output_files(num_rows, num_cols, "tr", modeldata.tr_yrs);
       }
     }
     if(modeldata.sc_yrs > 0 && modeldata.nc_sc){
-      if (args->get_full_size_outputs()) {
-        modeldata.create_netCDF_output_files(num_rows, num_cols, "sc", modeldata.sc_yrs);
-      } else {
+      if (args->get_outputs_time_unlimited()) {
         modeldata.create_netCDF_output_files(num_rows, num_cols, "sc", -1);
+      } else {
+        modeldata.create_netCDF_output_files(num_rows, num_cols, "sc", modeldata.sc_yrs);
       }
     }
 }
