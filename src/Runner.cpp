@@ -985,8 +985,8 @@ void Runner::add_to_package_for_IO_slave(const std::string & vname,
                                          const T & values) {
 #ifdef WITHMPI
 
-  // int id = MPI::COMM_WORLD.Get_rank();
-  // int ntasks = MPI::COMM_WORLD.Get_size();
+  int id = MPI::COMM_WORLD.Get_rank();
+  int ntasks = MPI::COMM_WORLD.Get_size();
 
   OutputDataNugget odn = OutputDataNugget(curr_filename, vname, starts, counts, values);
 
@@ -994,9 +994,11 @@ void Runner::add_to_package_for_IO_slave(const std::string & vname,
   // multiple messages and be sure to correctly re-build it based on tag).
   int tag = temutil::get_uid(this->md.io_data_comm_ptr->rank());
 
-  // Could set this based on this processes rank??
+  int designated_IO_process;
+
+  designated_IO_process = id % 4; // set by rank
+
   // OR could set this based on the variable name??
-  int designated_IO_process = 0;
 
   // SEND IT!
   this->md.io_data_comm_ptr->send(designated_IO_process, tag, odn);
