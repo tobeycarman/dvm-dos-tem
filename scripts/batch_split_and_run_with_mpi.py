@@ -48,7 +48,7 @@ import netCDF4 as nc    # for handling netcdf files
 
 
 # USER SHOULD SET THIS VALUE
-IDEAL_CELLS_PER_BATCH = 5
+IDEAL_CELLS_PER_BATCH = 10
 
 
 # Look in the config file to figure out where the full-domain runmask is.
@@ -196,7 +196,7 @@ for batch in range(0, number_batches):
   -n {number_processors} \
   ./dvmdostem -f staging-batch-run/batch-{batchid}/config.js -l disabled --max-output-volume 25GB -p 100 -e 1000 -s 250 -t 109 -n 91 
 
-  '''.format(batchid=batch, number_processors=(cells_in_batch+1)))
+  '''.format(batchid=batch, number_processors=(cells_in_batch+4)))
 
   print "Writing sbatch script for batch {}".format(batch)
   with open("staging-batch-run/batch-{}/slurm_runner.sh".format(batch), 'w') as f:

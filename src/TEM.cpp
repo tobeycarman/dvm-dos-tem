@@ -250,14 +250,16 @@ int main(int argc, char* argv[]){
               << "2 processors. Try launching the job with more processors!" << std::endl;
   }
 
-  double PERCENT_IO_MASTERS = 0.20; // percentage of total processors to dedicate to IO
+  //double PERCENT_IO_MASTERS = 0.20; // percentage of total processors to dedicate to IO
 
-  int N_IO_MASTERS = int(ntasks*PERCENT_IO_MASTERS); // cast, same as floor for positive
+  // int N_IO_MASTERS = int(ntasks*PERCENT_IO_MASTERS); // cast, same as floor for positive
+  // int N_WORKERS = ntasks - N_IO_MASTERS;
+  // if (N_IO_MASTERS < 1) {
+  //   N_IO_MASTERS = 1;
+  //   N_WORKERS = ntasks-1;
+  // }
+  int N_IO_MASTERS = 4;
   int N_WORKERS = ntasks - N_IO_MASTERS;
-  if (N_IO_MASTERS < 1) {
-    N_IO_MASTERS = 1;
-    N_WORKERS = ntasks-1;
-  }
 
   // The first N ranks are IO Masters. Holding the master IDs in a set could
   // allow for master ID's to be non-consecutive?
@@ -307,7 +309,7 @@ int main(int argc, char* argv[]){
   // split the message into a header (with size info) and data payload. If
   // there are two messages with the same tag, then the headers/payloads get 
   // messed up and the program crashes with a seg fault. The idea here is that
-  // by having differrent communicator groups, the "tag" space for each group
+  // by having different communicator groups, the "tag" space for each group
   // is full size, so maybe this will reduce the possibility for tag collisions?
   boost::mpi::communicator cell_complete_comm = world.split(CELL_COMPLETE);
   boost::mpi::communicator cell_fail_comm = world.split(CELL_FAIL);
@@ -601,7 +603,7 @@ int main(int argc, char* argv[]){
 
               std::pair<int, int> msg(rowidx, colidx);
               cell_complete_comm.send(designated_IO_master, temutil::get_uid(cell_complete_comm.rank()), msg);
-              std::cout << "w[" << id << "] completed blocking send of CELL_COMPLETE message to process 0" << std::endl; 
+              std::cout << "w[" << id << "] completed blocking send of CELL_COMPLETE message to process " << designated_IO_master << std::endl; 
         
             } catch (std::exception& e) {
 
