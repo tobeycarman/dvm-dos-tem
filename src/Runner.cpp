@@ -952,11 +952,25 @@ void Runner::add_to_package_for_IO_slave(const std::string & vname,
 
   int designated_IO_process;
 
-  designated_IO_process = id % 4; // set by rank
+  //designated_IO_process = id % 4; // set by rank
 
   // OR could set this based on the variable name??
+  // if      (vname < "H")                { designated_IO_process = 0; }
+  // else if (vname > "G" && vname < "O") { designated_IO_process = 1; }
+  // else if (vname > "N" && vname < "V") { designated_IO_process = 2; }
+  // else if (vname > "U")                { designated_IO_process = 3; }
+  // else { /* you should never get here?? */ } 
+
+  if      (vname < "J")                { designated_IO_process = 1; }
+  else if (vname > "I" && vname < "U") { designated_IO_process = 2; }
+  else if (vname > "T")                { designated_IO_process = 3; }
+  else { /* you should never get here?? */ } 
+
+
+  //std::cout << "w[" << id << "] (of " << ntasks << ") is sending an MPI message --to--> " << designated_IO_process << "\n";
 
   // SEND IT!
+  //std::cout << "w["<< id <<"] is SENDING data TO " << designated_IO_process << std::endl;
   this->md.io_data_comm_ptr->send(designated_IO_process, tag, odn);
 
   //BOOST_LOG_SEV(glg, debug) << "id: " << id << " (of " << ntasks << ") is sending an MPI message --to--> " << designated_io_slave << "\n";
