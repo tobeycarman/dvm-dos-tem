@@ -43,16 +43,28 @@ SCRIPT
 VAGRANTFILE_API_VERSION = "2" # <--don't change unless you know what you're doing!
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
-  config.vm.box = "fedora/25-cloud-base"
-  
-  mem = 1024 
+  config.vm.box = "bento/ubuntu-16.04"
+  config.vm.define "u1604"
+  mem = 3072
   cores = 4
   puts "Rolling your guest VM with #{cores} processors and #{mem}MB of RAM..."
   config.vm.provider "virtualbox" do |vb|
     vb.customize ["modifyvm", :id, "--memory", mem, "--cpus", cores, "--ioapic", "on"]
-    vb.name = "Fed25 dvmdostem"
+    vb.name = "ubuntu 1604 dvmdostem"
+
+    # Enable the use of hardware virtualization extensions (Intel VT-x or AMD-V) in the processor of your host system
+    vb.customize ["modifyvm", :id, "--hwvirtex", "on"]
+    # Enable, if Guest Additions are installed, whether hardware 3D acceleration should be available
+    vb.customize ["modifyvm", :id, "--accelerate3d", "on"]
   end
 
+  # using vagrant plugin: "vagrant plugin install vagrant-vbguest"
+  config.vbguest.auto_update = true
+
+  # tbc disabled on osx machine because I have a ton of junk in
+  # my dvm-dos-tem project folder on my osx host that I don't need to
+  # copy into the guest (rsync used for shared folders looks like)
+  config.vm.synced_folder ".", "/vagrant", disabled: true
 
   # Necessary for viewing interactive plots
   # (calibration mode, visualiation scripts, etc)

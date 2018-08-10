@@ -41,45 +41,61 @@ git checkout master
 git pull --ff-only upstream master:master
 cd ..
 
-if [ ! -d "$HOME"/ddtv ]
-then
-  git clone git@github.com:tobeycarman/ddtv.git "$HOME"/ddtv
-fi
-cd ddtv
-git remote rename origin upstream
-git checkout master
-git pull --ff-only upstream master:master
-cd ..
-
 #
 # setup various preference files (dotfiles)
 #
 
-# BASH preferences...
-echo "Setting up bashrc preferences file...."
-cat <<EOF > "$HOME"/.bashrc
-# .bashrc
+# Not sure how to manage this on Ubuntu automatically, so for now, here are
+# the changes I (tbc) have made manually, (8/10/18):
+#  - increase HISTSIZE, HISTFILESIZE
+#  - uncomment line with "force_color_prompt=yes"
+#  - add this at the bottom: 
+#    export SITE_SPECIFIC_INCLUDES=-I/usr/include/jsoncpp
+#  - enable git branch in prompt according to here:
+# https://askubuntu.com/questions/730754/how-do-i-show-the-git-branch-with-colours-in-bash-prompt
+# Place this in the .bashrc:
+# parse_git_branch() {
+#  git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/(\1)/'
+# }
+# if [ "$color_prompt" = yes ]; then
+#  PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[01;31m\] $(parse_git_branch)\[\033[00m\]\$ '
+# else
+#  PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w$(parse_git_branch)\$ '
+# fi
+# # THE SIX LINES BELOW are the default prompt and the unset (which were in the original .bashrc)
+# #if [ "$color_prompt" = yes ]; then
+# #    PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+# #else
+# #    PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
+# #fi
+# #unset color_prompt force_color_prompt
 
-# Source global definitions
-if [ -f /etc/bashrc ]; then
-  . /etc/bashrc
-fi
 
-# Uncomment the following line if you don't like systemctl's auto-paging feature:
-# export SYSTEMD_PAGER=
+# # BASH preferences...
+# echo "Setting up bashrc preferences file...."
+# cat <<EOF > "$HOME"/.bashrc
+# # .bashrc
 
-# User specific aliases and functions
+# # Source global definitions
+# if [ -f /etc/bashrc ]; then
+#   . /etc/bashrc
+# fi
 
-# Add git branch to bash prompt...
-source /usr/share/git-core/contrib/completion/git-prompt.sh
-export PS1='[\u@\h \W$(declare -F __git_ps1 &>/dev/null && __git_ps1 " (%s)")]\$ '
+# # Uncomment the following line if you don't like systemctl's auto-paging feature:
+# # export SYSTEMD_PAGER=
 
-# set up some environment variables
-export SITE_SPECIFIC_INCLUDES=-I/usr/include/jsoncpp
-export PATH=$PATH:/usr/lib64/openmpi/bin
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib64/openmpi/lib
+# # User specific aliases and functions
 
-EOF
+# # Add git branch to bash prompt...
+# source /usr/share/git-core/contrib/completion/git-prompt.sh
+# export PS1='[\u@\h \W$(declare -F __git_ps1 &>/dev/null && __git_ps1 " (%s)")]\$ '
+
+# # set up some environment variables
+# export SITE_SPECIFIC_INCLUDES=-I/usr/include/jsoncpp
+# export PATH=$PATH:/usr/lib64/openmpi/bin
+# export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib64/openmpi/lib
+
+# EOF
 
 # VIM preferences...
 cat <<EOF >> "$HOME"/.vimrc
