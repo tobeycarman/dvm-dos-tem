@@ -952,10 +952,10 @@ void Runner::output_nc_soil_layer(int ncid, int cv, double *data, int max_var_co
     or whether to write the data out here and now. */
 template<typename T>
 void Runner::io_wrapper(const std::string& vname,
-                                 const std::string& curr_filename,
-                                 const std::vector<size_t>& starts,
-                                 const std::vector<size_t>& counts,
-                                 const T& values) {
+                        const std::string& curr_filename,
+                        const std::vector<size_t>& starts,
+                        const std::vector<size_t>& counts,
+                        const T& values) {
 
 #ifdef WITHMPI
 
@@ -1110,20 +1110,26 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
   soilcount4[3] = 1;
 
   /*** Fronts ***/
-  size_t frontcount4[4];
+  std::vector<size_t> frontstart4(4, 0);
+  // Index 0 is set later 
+  frontstart4[1] = 0;
+  frontstart4[2] = rowidx;
+  frontstart4[3] = colidx;
+
+  std::vector<size_t> frontcount4(4, 0);
   frontcount4[0] = 1; 
   frontcount4[1] = MAX_NUM_FNT;
   frontcount4[2] = 1;
   frontcount4[3] = 1;
 
-  size_t frontstart5[5];
-  //Index 0 is set later
-  frontstart5[1] = 0;
-  frontstart5[2] = 0;
+  std::vector<size_t> frontstart5(5, 0);
+  //Index 0 is set later   // time
+  frontstart5[1] = 0;      // day of month
+  frontstart5[2] = 0;      // front layer (index?)
   frontstart5[3] = rowidx;
   frontstart5[4] = colidx;
 
-  size_t frontcount5[5];
+  std::vector<size_t> frontcount5(5, 0);
   frontcount5[0] = 1;
   frontcount5[1] = dinm;
   frontcount5[2] = MAX_NUM_FNT;
@@ -2511,77 +2517,105 @@ void Runner::output_netCDF(std::map<std::string, OutputSpec> &netcdf_outputs, in
   map_itr = netcdf_outputs.end();
 
 
-//   FRONTSTYPE
-//   map_itr = netcdf_outputs.find("FRONTSTYPE");
-//   if(map_itr != netcdf_outputs.end()){
-//     std::string svname = map_itr->first;
-//     curr_spec = map_itr->second;
-//     curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
-// 
-//     #pragma omp critical(outputFRONTSTYPE)
-//     {
-// 
-//     This uses the summary structs, but might be more accurate
-//     if the deque of fronts was checked directly.
-//     if(curr_spec.daily){
-//       start3[0] = day_timestep;
-//       std::vector<double> values(dinm, -99999);
-//       for (id=0; id<MAX_NUM_FRONTS; id++){
-//         values[id] = cohort.edall->daily_frontstype[][]
-//       }
-//       output_nc_soil_layer(ncid, cv, &cohort.edall->daily_frontstype[0][0], MAX_NUM_FNT, day_timestep, dinm);
-//     }
-//     else if(curr_spec.monthly){
-//       soilstart4[0] = month_timestep;
-//       temutil::nc( nc_put_vara_int(ncid, cv, soilstart4, frontcount4, &cohort.ground.frnttype[0]) );
-//       nc_output_soil(ncid, cv, &cohort.ground.frnttype[0], MAX_NUM_FNT, month_timestep)
-//     }
-//     else if(curr_spec.yearly){
-//       soilstart4[0] = year;
-//       temutil::nc( nc_put_vara_int(ncid, cv, soilstart4, frontcount4, &cohort.ground.frnttype[0]) );
-//       nc_output_soil(ncid, cv, &cohort.ground.frnttype[0], MAX_NUM_FNT, year)
-//     }
-// 
-//     }//end critical(outputFRONTSTYPE)
-//   }//end FRONTSTYPE
-//   map_itr = netcdf_outputs.end();
-// 
-// 
-//   FRONTSDEPTH
-//   map_itr = netcdf_outputs.find("FRONTSDEPTH");
-//   if(map_itr != netcdf_outputs.end()){
-//     BOOST_LOG_SEV(glg, debug)<<"NetCDF output: FRONTSDEPTH";
-//     curr_spec = map_itr->second;
-//     curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
-// 
-//     #pragma omp critical(outputFRONTSDEPTH)
-//     {
-// #ifdef WITHMPI
-//       temutil::nc( nc_open_par(curr_filename.c_str(), NC_WRITE|NC_MPIIO, MPI_COMM_SELF, MPI_INFO_NULL, &ncid) );
-//       temutil::nc( nc_inq_varid(ncid, "FRONTSDEPTH", &cv) );
-//       temutil::nc( nc_var_par_access(ncid, cv, NC_INDEPENDENT) );
-// #else
-//       temutil::nc( nc_open(curr_filename.c_str(), NC_WRITE, &ncid) );
-//       temutil::nc( nc_inq_varid(ncid, "FRONTSDEPTH", &cv) );
-// #endif
-// 
-//     This uses the summary structs, but might be more accurate
-//     if the deque of fronts was checked directly.
-//     if(curr_spec.daily){
-//       output_nc_soil_layer(ncid, cv, &cohort.edall->daily_frontsdepth[0][0], MAX_NUM_FNT, day_timestep, dinm);
-//     }
-//     else if(curr_spec.monthly){
-//       soilstart4[0] = month_timestep;
-//       temutil::nc( nc_put_vara_double(ncid, cv, soilstart4, frontcount4, &cohort.ground.frntz[0]) );
-//     }
-//     else if(curr_spec.yearly){
-//       soilstart4[0] = year;
-//       temutil::nc( nc_put_vara_double(ncid, cv, soilstart4, frontcount4, &cohort.ground.frntz[0]) );
-//     }
-// 
-//     }//end critical(outputFRONTSDEPTH)
-//   }//end FRONTSDEPTH
-//   map_itr = netcdf_outputs.end();
+  // FRONTSTYPE
+  map_itr = netcdf_outputs.find("FRONTSTYPE");
+  if(map_itr != netcdf_outputs.end()){
+    std::string svname = map_itr->first;
+    curr_spec = map_itr->second;
+    curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
+
+    #pragma omp critical(outputFRONTSTYPE)
+    {
+
+    // This uses the summary structs, but might be more accurate
+    // if the deque of fronts was checked directly.
+    if(curr_spec.daily){
+
+      // BROKEN!!!! Gives netcdf "start+count exceeds dimension bounds" 
+      frontstart5[0] = day_timestep;
+      std::vector<double> values(dinm*MAX_NUM_FNT, -99999);
+
+      for (int day_of_month=0; day_of_month<dinm; day_of_month++) {
+        for (int fnt_idx=0; fnt_idx<MAX_NUM_FNT; fnt_idx++){
+          int idx = day_of_month*MAX_NUM_FNT + fnt_idx;
+          values[idx] = cohort.edall->daily_frontstype[day_of_month][fnt_idx];
+        }
+      }
+      //output_nc_soil_layer(ncid, cv, &cohort.edall->daily_frontstype[0][0], MAX_NUM_FNT, day_timestep, dinm);
+      io_wrapper(svname, curr_filename, frontstart5, frontcount5, values);
+
+    }
+    else if(curr_spec.monthly){
+      frontstart4[0] = month_timestep;
+      std::vector<double> values(MAX_NUM_FNT, -99999);
+      for (int i=0; i < MAX_NUM_FNT; i++){
+        values[i] = cohort.ground.frnttype[i];
+      }
+      io_wrapper(svname, curr_filename, frontstart4, frontcount4, values);
+      //temutil::nc( nc_put_vara_int(ncid, cv, soilstart4, frontcount4, &cohort.ground.frnttype[0]) );
+      //nc_output_soil(ncid, cv, &cohort.ground.frnttype[0], MAX_NUM_FNT, month_timestep)
+    }
+    else if(curr_spec.yearly){
+      frontstart4[0] = year;
+      std::vector<double> values(MAX_NUM_FNT, -99999);
+      for (int i=0; i < MAX_NUM_FNT; i++){
+        values[i] = cohort.ground.frnttype[i];
+      }
+      io_wrapper(svname, curr_filename, frontstart4, frontcount4, values);
+      //temutil::nc( nc_put_vara_int(ncid, cv, soilstart4, frontcount4, &cohort.ground.frnttype[0]) );
+      //nc_output_soil(ncid, cv, &cohort.ground.frnttype[0], MAX_NUM_FNT, year)
+    }
+
+    }//end critical(outputFRONTSTYPE)
+  }//end FRONTSTYPE
+  map_itr = netcdf_outputs.end();
+
+
+  // FRONTSDEPTH
+  map_itr = netcdf_outputs.find("FRONTSDEPTH");
+  if(map_itr != netcdf_outputs.end()){
+    std::string svname = map_itr->first;
+    curr_spec = map_itr->second;
+    curr_filename = curr_spec.file_path + curr_spec.filename_prefix + file_stage_suffix;
+
+    #pragma omp critical(outputFRONTSDEPTH)
+    {
+
+    // This uses the summary structs, but might be more accurate
+    // if the deque of fronts was checked directly.
+    if(curr_spec.daily){
+      output_nc_soil_layer(ncid, cv, &cohort.edall->daily_frontsdepth[0][0], MAX_NUM_FNT, day_timestep, dinm);
+
+      // Likely BROKEN!!!! Gives netcdf "start+count exceeds dimension bounds" 
+      frontstart5[0] = day_timestep;
+      std::vector<double> values(dinm*MAX_NUM_FNT, -99999);
+      for (int day_of_month=0; day_of_month<dinm; day_of_month++) {
+        for (int fnt_idx=0; fnt_idx<MAX_NUM_FNT; fnt_idx++){
+          int idx = day_of_month*MAX_NUM_FNT + fnt_idx;
+          values[idx] = cohort.edall->daily_frontsdepth[day_of_month][fnt_idx];
+        }
+      }
+      io_wrapper(svname, curr_filename, frontstart5, frontcount5, values);
+    }
+    else if(curr_spec.monthly){
+      frontstart4[0] = month_timestep;
+      std::vector<double> values(MAX_NUM_FNT, -99999);
+      for (int i=0; i<MAX_NUM_FNT; i++){
+        values[i] = cohort.ground.frntz[i];
+      }
+      io_wrapper(svname, curr_filename, frontstart4, frontcount4, values);
+    }
+    else if(curr_spec.yearly){
+      frontstart4[0] = year;
+      std::vector<double> values(MAX_NUM_FNT, -99999);
+      for (int i=0; i<MAX_NUM_FNT; i++){
+        values[i] = cohort.ground.frntz[i];
+      }
+      io_wrapper(svname, curr_filename, frontstart4, frontcount4, values);
+    }
+   }//end critical(outputFRONTSDEPTH)
+  }//end FRONTSDEPTH
+  map_itr = netcdf_outputs.end();
 
 
   //TMINEA
