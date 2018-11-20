@@ -17,8 +17,22 @@ echo "Installing software..."
 apt-get update
 apt-get install -y xauth git-gui
 apt-get install -y nvidia-367
-apt-get install -y qtcreator
+apt-get install -y qtcreator # Doesn't work - local variable display broken
+                             # also tried updated version of qtcreator 
+                             # downloaded and installed direct from QT web site
+                             # still broken!
+                             # 
 apt-get install -y libjsoncpp-dev libnetcdf-dev libboost-all-dev
+
+
+apt-get install python-pip
+
+# Note that in this script, pip is installed with sudo!
+pip install gdbgui matplotlib netCDF4
+
+apt-get install python-tk libnetcdf-dev netcdf-bin nco ncview
+
+apt-get install qgis
 
 
 #  NOTE: You've gotta install openmpi *after* NetCDF! This keeps NetCDF from

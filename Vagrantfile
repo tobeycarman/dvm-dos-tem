@@ -58,6 +58,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     vb.customize ["modifyvm", :id, "--accelerate3d", "on"]
   end
 
+  # Use this so that host can access web page hosted by guest (served by 
+  # gdbgui in this case)
+  config.vm.network "private_network", ip:"55.55.5.5"
+
   # using vagrant plugin: "vagrant plugin install vagrant-vbguest"
   config.vbguest.auto_update = true
 
