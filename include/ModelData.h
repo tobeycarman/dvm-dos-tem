@@ -67,6 +67,7 @@ public:
   bool nc_sp;
   bool nc_tr;
   bool nc_sc;
+  int nc_output_last_n_eq;
 
   // Maps holding data about variables to be output at specific timesteps
   // C++11 would allow the use of unordered_maps, which have a faster

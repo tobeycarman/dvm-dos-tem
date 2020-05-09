@@ -88,6 +88,7 @@ void ModelData::update(ArgHandler const * arghandler) {
   this->archive_all_json = arghandler->get_archive_all_json();
   this->tar_caljson = arghandler->get_tar_caljson();
 
+  this->nc_output_last_n_eq = arghandler->get_nc_output_last_n_eq();
   // it it was set on the command line, then use that value, otherwise,
   // use the value
   if (arghandler->get_inter_stage_pause()) {

@@ -24,6 +24,7 @@ class ArgHandler {
   int sc_yrs;
 
   bool cal_mode;
+  int nc_output_last_n_eq;
   int force_cmt;
   bool inter_stage_pause;
   bool archive_all_json;
@@ -61,6 +62,7 @@ public:
   inline const bool get_fpe(){return floating_point_exp;};
 	
   inline const bool get_cal_mode(){return cal_mode;};
+  inline const int get_nc_output_last_n_eq() const {return nc_output_last_n_eq;};
   inline const int  get_force_cmt() const {return force_cmt;};
   inline const bool get_inter_stage_pause() const {return inter_stage_pause;};
   inline const bool get_archive_all_json() const {return archive_all_json;};

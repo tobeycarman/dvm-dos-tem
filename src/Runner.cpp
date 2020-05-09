@@ -154,7 +154,16 @@ void Runner::yearly_output(const int year, const std::string& stage,
     output_netCDF_yearly(year, stage);
   }
 
-
+  // Output the last few equlibrium years for calibration with netcdf files if
+  // requested by the user. Works even if overall netcdf output is turned off.
+  if (stage.find("eq") != std::string::npos && this->md.nc_output_last_n_eq > 0 && !md.nc_eq ) {
+    if (year >= endyr - this->md.nc_output_last_n_eq) {
+      int tail_yr = year - (endyr - this->md.nc_output_last_n_eq);
+      BOOST_LOG_SEV(glg, debug) << stage << " " << startyr << " "
+                                << endyr << " " << year << " " << tail_yr << "\n";
+      output_netCDF_yearly(tail_yr, stage);
+    }
+  }
 }
 
 std::string Runner::report_not_equal(const std::string& a_desc,

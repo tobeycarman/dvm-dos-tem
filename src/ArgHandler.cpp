@@ -48,6 +48,14 @@ void ArgHandler::parse(int argc, char** argv) {
      "With this flag, (and when in calibration mode), the model will pause and "
      "wait for user input at the end of each run-stage.")
 
+    ("nc-output-last-n-eq", boost::program_options::value<int>(&nc_output_last_n_eq)
+     ->default_value(-1),
+     "Make sure that the last N equlibrium stage outputs are written even if the "
+     "nc outputs are not enabled in config file. If nc outputs for the equlibrium "
+     "stage are enabled in the config file, then this option is ignored and the "
+     "entire equlibrium stage is output. Intent is to allow for a calibration "
+     "(e.g. qcal.py) to be run without needing to save the entire equlibrium stage.")
+
     ("last-n-json", boost::program_options::value<int>(&last_n_json_files)
      ->default_value(-1),
      "Only output the json files for the last N years. -1 indicates to output "

@@ -225,7 +225,7 @@ int main(int argc, char* argv[]){
   if(id==0){
     BOOST_LOG_SEV(glg, info) << "Handling single-process setup";
 
-    BOOST_LOG_SEV(glg, info) << "Checking for output directory: "<<modeldata.output_dir;
+    BOOST_LOG_SEV(glg, info) << "Checking for output directory: " << modeldata.output_dir;
     boost::filesystem::path out_dir_path(modeldata.output_dir);
     if( boost::filesystem::exists(out_dir_path) ){
       if (args->get_no_output_cleanup()) {
@@ -283,6 +283,10 @@ int main(int argc, char* argv[]){
     if(modeldata.eq_yrs > 100 && modeldata.daily_netcdf_outputs.size() > 0){
       BOOST_LOG_SEV(glg, fatal) << "Daily outputs specified with EQ run greater than 100 years! Reconsider...";
     }
+  }
+  if(modeldata.nc_output_last_n_eq > 0 && modeldata.eq_yrs > 0 && !modeldata.nc_eq) {
+    assert(modeldata.nc_output_last_n_eq <= modeldata.eq_yrs && "Must have at least as many eq run years as requested with nc_output_last_n_eq");
+    modeldata.create_netCDF_output_files(num_rows, num_cols, "eq", modeldata.nc_output_last_n_eq, copy_gm);
   }
   if(modeldata.sp_yrs > 0 && modeldata.nc_sp){
     modeldata.create_netCDF_output_files(num_rows, num_cols, "sp", modeldata.sp_yrs, copy_gm);
