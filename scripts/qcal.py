@@ -51,7 +51,7 @@ def qcal_rank2(truth, value):
   return (truth - value)**2
 
 
-def measure_calibration_quality_nc(output_directory_path, ref_param_dir, ref_targets={}):
+def measure_calibration_quality_nc(output_directory_path, ref_param_dir, ref_targets={}, Y=None, X=None):
   '''
   Parameters
   ----------
@@ -71,8 +71,8 @@ def measure_calibration_quality_nc(output_directory_path, ref_param_dir, ref_tar
   # 2) average over all the pixels of the same (specified) CMT in a dataset
   # For now starting with the simple case of just considering one pixel.
 
-  Y = 0
-  X = 0
+  assert( (Y is not None) and (X is not None))
+
   last_N_yrs = 10
 
   with nc.Dataset(os.path.join(output_directory_path, 'CMTNUM_yearly_eq.nc'), 'r') as ds:
@@ -248,7 +248,7 @@ class QCal(object):
 
   def nc_qcal(self):
     assert(os.path.splitext(os.listdir(self.ncdata_path)[0])[1] == ".nc")
-    result_list = measure_calibration_quality_nc(self.ncdata_path, ref_targets=self.targets, ref_param_dir=self.params_dir)
+    result_list = measure_calibration_quality_nc(self.ncdata_path, ref_targets=self.targets, ref_param_dir=self.params_dir, X=self.X, Y=self.Y)
     return result_list
 
 
