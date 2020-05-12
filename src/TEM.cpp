@@ -279,14 +279,15 @@ int main(int argc, char* argv[]){
   BOOST_LOG_SEV(glg, info) << "Creating a set of empty NetCDF output files";
   bool copy_gm = true;
   if(modeldata.eq_yrs > 0 && modeldata.nc_eq){
-    modeldata.create_netCDF_output_files(num_rows, num_cols, "eq", modeldata.eq_yrs, copy_gm);
-    if(modeldata.eq_yrs > 100 && modeldata.daily_netcdf_outputs.size() > 0){
-      BOOST_LOG_SEV(glg, fatal) << "Daily outputs specified with EQ run greater than 100 years! Reconsider...";
+    if (modeldata.nc_output_last_n_eq > 0) {
+      assert(modeldata.nc_output_last_n_eq <= modeldata.eq_yrs && "Must have at least as many eq run years as requested with nc_output_last_n_eq");
+      modeldata.create_netCDF_output_files(num_rows, num_cols, "eq", modeldata.nc_output_last_n_eq, copy_gm);
+    } else {
+      modeldata.create_netCDF_output_files(num_rows, num_cols, "eq", modeldata.eq_yrs, copy_gm);
+      if(modeldata.eq_yrs > 100 && modeldata.daily_netcdf_outputs.size() > 0){
+        BOOST_LOG_SEV(glg, fatal) << "Daily outputs specified with EQ run greater than 100 years! Reconsider...";
+      }
     }
-  }
-  if(modeldata.nc_output_last_n_eq > 0 && modeldata.eq_yrs > 0 && !modeldata.nc_eq) {
-    assert(modeldata.nc_output_last_n_eq <= modeldata.eq_yrs && "Must have at least as many eq run years as requested with nc_output_last_n_eq");
-    modeldata.create_netCDF_output_files(num_rows, num_cols, "eq", modeldata.nc_output_last_n_eq, copy_gm);
   }
   if(modeldata.sp_yrs > 0 && modeldata.nc_sp){
     modeldata.create_netCDF_output_files(num_rows, num_cols, "sp", modeldata.sp_yrs, copy_gm);

@@ -20,6 +20,7 @@
     "topo_file":          "demo-data/cru-ts40_ar5_rcp85_ncar-ccsm4_toolik_field_station_10x10/topo.nc",
     "output_dir":         "output/",
     "output_spec_file":   "config/output_spec.csv",
+    //"nc_output_last_n_eq":5, // ignored unless nc output enabled, <= 0 means output everything
     "output_monthly":     1, //JSON specific
     "output_nc_eq":       0,
     "output_nc_sp":       1,

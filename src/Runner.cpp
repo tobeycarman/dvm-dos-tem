@@ -145,23 +145,25 @@ void Runner::yearly_output(const int year, const std::string& stage,
     }
   }
 
-  // NetCDF output. Semi-kludgy
-  if(   (stage.find("eq")!=std::string::npos && md.nc_eq)
-     || (stage.find("sp")!=std::string::npos && md.nc_sp)
-     || (stage.find("tr")!=std::string::npos && md.nc_tr)
-     || (stage.find("sc")!=std::string::npos && md.nc_sc) ){
-    BOOST_LOG_SEV(glg, debug) << "Yearly NetCDF output function call, runstage: "<<stage<<" year: "<<year;
-    output_netCDF_yearly(year, stage);
-  }
-
-  // Output the last few equlibrium years for calibration with netcdf files if
-  // requested by the user. Works even if overall netcdf output is turned off.
-  if (stage.find("eq") != std::string::npos && this->md.nc_output_last_n_eq > 0 && !md.nc_eq ) {
-    if (year >= endyr - this->md.nc_output_last_n_eq) {
-      int tail_yr = year - (endyr - this->md.nc_output_last_n_eq);
-      BOOST_LOG_SEV(glg, debug) << stage << " " << startyr << " "
-                                << endyr << " " << year << " " << tail_yr << "\n";
-      output_netCDF_yearly(tail_yr, stage);
+  // special considerations for eq stage
+  if (stage.find("eq") != std::string::npos && md.nc_eq) {
+    // Output the last few equlibrium years for calibration with
+    // netcdf files if requested by the user.
+    if (this->md.nc_output_last_n_eq > 0) {
+      if (year >= endyr - this->md.nc_output_last_n_eq) {
+        int tail_yr = year - (endyr - this->md.nc_output_last_n_eq);
+        output_netCDF_yearly(tail_yr, stage);
+      }
+    } else {
+      output_netCDF_yearly(year, stage);
+    }
+  } else {
+    // All other stages
+    if( (stage.find("sp")!=std::string::npos && md.nc_sp)
+        || (stage.find("tr")!=std::string::npos && md.nc_tr)
+        || (stage.find("sc")!=std::string::npos && md.nc_sc) ){
+      BOOST_LOG_SEV(glg, debug) << "Yearly NetCDF output function call, runstage: "<<stage<<" year: "<<year;
+      output_netCDF_yearly(year, stage);
     }
   }
 }

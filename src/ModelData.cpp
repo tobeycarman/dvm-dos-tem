@@ -54,6 +54,7 @@ ModelData::ModelData(Json::Value controldata):force_cmt(-1) {
   output_spec_file  = controldata["IO"]["output_spec_file"].asString();
   output_monthly    = controldata["IO"]["output_monthly"].asInt();
   nc_eq             = controldata["IO"]["output_nc_eq"].asBool();
+  nc_output_last_n_eq = controldata["IO"]["nc_output_last_n_eq"].asInt();
   nc_sp             = controldata["IO"]["output_nc_sp"].asBool();
   nc_tr             = controldata["IO"]["output_nc_tr"].asBool();
   nc_sc             = controldata["IO"]["output_nc_sc"].asBool();
@@ -88,7 +89,6 @@ void ModelData::update(ArgHandler const * arghandler) {
   this->archive_all_json = arghandler->get_archive_all_json();
   this->tar_caljson = arghandler->get_tar_caljson();
 
-  this->nc_output_last_n_eq = arghandler->get_nc_output_last_n_eq();
   // it it was set on the command line, then use that value, otherwise,
   // use the value
   if (arghandler->get_inter_stage_pause()) {
@@ -99,6 +99,12 @@ void ModelData::update(ArgHandler const * arghandler) {
   if (arghandler->get_force_cmt() >= 0) {
     this->force_cmt = arghandler->get_force_cmt();
   }
+
+  // User would like only the last few years of equlibrium outputs
+  if (arghandler->get_nc_output_last_n_eq() > 0) {
+    this->nc_output_last_n_eq = arghandler->get_nc_output_last_n_eq();
+  }
+
 }
 
 
