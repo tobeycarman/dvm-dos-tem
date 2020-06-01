@@ -104,8 +104,7 @@ def measure_calibration_quality_nc(output_directory_path, ref_param_dir, ref_tar
   final_data = []
   #print("variable value target rank(abs)")
   for ctname, ncname in caltarget_to_ncname_map:
-
-    data, dims = ou.get_last_n_eq(ncname, 'yearly', output_directory_path, n=last_N_yrs)
+    data, dims = ou.get_first_n_stage(ncname, 'yearly', 'tr', output_directory_path, n=10)
     dsizes, dnames = list(zip(*dims))
 
     #print(ctname, output_directory_path, ncname, dims, dnames, dsizes)
@@ -474,7 +473,7 @@ if __name__ == '__main__':
       ref_params_dir=args.ref_params
   )
 
-  print(qcal.report(which='json'))
+  #print(qcal.report(which='json'))
   print(qcal.report(which='nc'))
 
   #qcal.nc_qcal()

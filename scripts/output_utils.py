@@ -14,6 +14,17 @@ import matplotlib.gridspec as gridspec
 import netCDF4 as nc
 import collections
 
+def get_first_n_stage(var, timeres='yearly', stage='eq', fileprefix='', n=10):
+  ''' Work in progress for getting the first N years of a give stage.'''
+
+  fname = os.path.join(fileprefix, '{}_{}_{}.nc'.format(var.upper(), timeres.lower(), stage.lower()))
+
+  if not os.path.exists(fname):
+    raise RuntimeError("Can't find file: {}".format(fname))
+  with nc.Dataset(fname) as ds:
+    data = ds.variables[var.upper()][0:n]
+    info = list(zip(data.shape, list(ds.dimensions.keys())))
+  return data, info
 
 def get_last_n_eq(var, timeres='yearly', fileprefix='', n=10):
   '''
@@ -331,14 +342,21 @@ def plot_basic_timeseries(vars2plot, spatial_y, spatial_x, time_resolution, stag
   ROWS = len(vars2plot)
   COLS = 1
   gs = gridspec.GridSpec(ROWS, COLS)
-
+  
   for i, var in enumerate(vars2plot):
+    print("plotting: ", i, var)
     ax = plt.subplot(gs[i,:])
     data, units = stitch_stages(var, time_resolution, stages, folder)
     print(data.shape)
-    ax.plot(data[:,spatial_y, spatial_x], label=var)
-    ax.set_ylabel = units
+    if len(data.shape) == 4:
+      print("Assume that data is either by PFT or LAYER, plot one line for each...")
+      for j in range(data.shape[1]):
+        ax.plot(data[:,j,spatial_y,spatial_x], label="{}-{}".format(var, j))
+    else:
+      ax.plot(data[:,spatial_y, spatial_x], label=var)
+      ax.set_ylabel = units
 
+  plt.legend()
   plt.show()
 
 
@@ -1059,7 +1077,8 @@ if __name__ == '__main__':
           Make time-series of one or more various variables. Each variable gets
           its own subplot. X axes will be linked.
           '''))
-  bts_parser.add_argument('--stitch', nargs="+", help="comma separated list of stages to attempt to stitch together")
+
+  bts_parser.add_argument('--stitch', nargs="+", help="space separated list of stages to attempt to stitch together")
   bts_parser.add_argument('--yx', nargs=2, type=int, default=[0, 0], help='The (Y,X) pixel coordinates to plot')
   bts_parser.add_argument('--vars', nargs="+", help="comma or space separated list or variable names")
   bts_parser.add_argument('--savename', default="dvmdostem-outpututils-basicts.pdf")
