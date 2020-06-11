@@ -92,7 +92,7 @@ void Runner::run_years(int start_year, int end_year, const std::string& stage) {
 
         this->cohort.updateMonthly(iy, im, DINM[im], stage);
 
-        this->monthly_output(iy, im, stage);
+        this->monthly_output(iy, im, stage, end_year);
 
       } // end month loop
     } // end named scope
@@ -106,7 +106,7 @@ void Runner::run_years(int start_year, int end_year, const std::string& stage) {
   }} // end year loop (and named scope
 }
 
-void Runner::monthly_output(const int year, const int month, const std::string& runstage) {
+void Runner::monthly_output(const int year, const int month, const std::string& runstage, const int endyr) {
 
   if (md.output_monthly) {
 
@@ -117,21 +117,29 @@ void Runner::monthly_output(const int year, const int month, const std::string& 
     }
 
   } else {
-    BOOST_LOG_SEV(glg, debug) << "Monthly output turned off in config settings.";
+    BOOST_LOG_SEV(glg, debug) << "Monthly json output turned off in config settings.";
   }
 
-  // NetCDF output is not controlled by the monthly output flag in
-  // the config file. TODO Semi-kludgy
-  if(   (runstage.find("eq")!=std::string::npos && md.nc_eq)
-     || (runstage.find("sp")!=std::string::npos && md.nc_sp)
+  // NetCDF output is *NOT* controlled by the monthly output flag in the config file!
+  if((runstage.find("eq")!=std::string::npos && md.nc_eq)) {
+    // Output the last few equlibrium years for calibration with
+    // netcdf files if requested by the user.
+    if (this->md.nc_output_last_n_eq > 0) {
+      if (year >= endyr - this->md.nc_output_last_n_eq) {
+        int tail_yr = year - (endyr - this->md.nc_output_last_n_eq);
+        BOOST_LOG_SEV(glg, debug) << "Monthly NetCDF output function call, runstage: "<<runstage<<" run year: "<<year<<" tail_ year: "<<tail_yr<<" month: "<<month;
+        output_netCDF_monthly(tail_yr, month, runstage);
+      }
+    }
+  } else {
+    if ((runstage.find("sp")!=std::string::npos && md.nc_sp)
      || (runstage.find("tr")!=std::string::npos && md.nc_tr)
-     || (runstage.find("sc")!=std::string::npos && md.nc_sc) ){
-    BOOST_LOG_SEV(glg, debug) << "Monthly NetCDF output function call, runstage: "<<runstage<<" year: "<<year<<" month: "<<month;
-    output_netCDF_monthly(year, month, runstage);
-  }
-
+     || (runstage.find("sc")!=std::string::npos && md.nc_sc)) {
+      BOOST_LOG_SEV(glg, debug) << "Monthly NetCDF output function call, runstage: "<<runstage<<" year: "<<year<<" month: "<<month;
+      output_netCDF_monthly(year, month, runstage);
+    }
+  } 
 }
-
 void Runner::yearly_output(const int year, const std::string& stage,
     const int startyr, const int endyr) {
 

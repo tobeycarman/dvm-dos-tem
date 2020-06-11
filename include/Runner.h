@@ -95,7 +95,7 @@ private:
 
   deque<RestartData> mlyres;
 
-  void monthly_output(const int year, const int month, const std::string& runstage);
+  void monthly_output(const int year, const int month, const std::string& runstage, const int endyr);
   void yearly_output(const int year, const std::string& stage, const int startyr, const int endyr);
 
 };
