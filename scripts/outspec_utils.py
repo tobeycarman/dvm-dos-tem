@@ -23,11 +23,17 @@ import sys
 import argparse
 import textwrap
 
-def print_line_dict(d, header=False):
-  if header:
-    print("{:>20s} {:>20s} {:>12} {:>12} {:>12} {:>12} {:>12} {:>12} {:>12}     {:}".format('Name','Units','Yearly','Monthly','Daily','PFT','Compartments','Layers','Data Type', 'Description'))
+def print_line_dict(d, header=False, csv=False):
+  if csv:
+    if header:
+      print('{:},{:},{:},{:},{:},{:},{:},{:},{:},{:}'.format('Name','Units','Yearly','Monthly','Daily','PFT','Compartments','Layers','Data Type','Description'))
+    else:
+      print('{Name},{Units},{Yearly},{Monthly},{Daily},{PFT},{Compartments},{Layers},{Data Type},{Description}'.format(**d))
   else:
-    print("{Name:>20s} {Units:>20s} {Yearly:>12} {Monthly:>12} {Daily:>12} {PFT:>12} {Compartments:>12} {Layers:>12} {Data Type:>12}     {Description}".format(**d))
+    if header:
+      print("{:>20s} {:>20s} {:>12} {:>12} {:>12} {:>12} {:>12} {:>12} {:>12}     {:}".format('Name','Units','Yearly','Monthly','Daily','PFT','Compartments','Layers','Data Type', 'Description'))
+    else:
+      print("{Name:>20s} {Units:>20s} {Yearly:>12} {Monthly:>12} {Daily:>12} {PFT:>12} {Compartments:>12} {Layers:>12} {Data Type:>12}     {Description}".format(**d))
 
 def list_vars(data, verbose=False):
   var_names = [line['Name'] for line in data]
@@ -261,7 +267,10 @@ if __name__ == '__main__':
 
   parser.add_argument('-s','--summary', action='store_true',
       help=textwrap.dedent('''Print out all the variables that are enabled in 
-        the file.'''))
+        the file. Fixed width format that is easily readable.'''))
+
+  parser.add_argument('--csv',action='store_true',
+      help=textwrap.dedent('''Print summary info in csv format, with header.'''))
 
   parser.add_argument('--enable-cal-vars', action='store_true',
     help=textwrap.dedent('''Enable netcdf outputs for all the calibration target variables.'''))
@@ -323,12 +332,12 @@ if __name__ == '__main__':
 
   if args.summary:
     data = csv_file_to_data_dict_list(args.file)
-    print_line_dict(data[0], header=True)
+    print_line_dict(data[0], header=True, csv=args.csv)
     for line in data:
       if all([line[x] == 'invalid' or line[x] == '' for x in ['Yearly','Monthly','Daily','PFT','Compartments','Layers']]):
         pass # Nothing turned on...
       else:
-        print_line_dict(line)
+        print_line_dict(line, csv=args.csv)
     check_layer_vars(data)
     sys.exit()
 
