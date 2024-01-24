@@ -2072,7 +2072,7 @@ def main(start_year, years, xo, yo, xs, ys, tif_dir, out_dir,
 
     # Pick the starting year of the projected file to immediately follow the 
     # last year in the historic file.
-    if ('projected-climate' in files) and ('historic-climate' in files):
+    if ('projected-climate' in files):
       if clip_projected2match_historic:
 
         # Look up the last year that is in the historic data
