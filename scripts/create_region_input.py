@@ -1859,6 +1859,19 @@ def main(start_year, years, xo, yo, xs, ys, tif_dir, out_dir,
          files=[], config={}, time_coord_var=False,
          clip_projected2match_historic=False,
          withlatlon=None, withproj=None, projwin=False, cleanup=False):
+  print("....Settings at top of main....")
+  print(f"""{start_year=},{years=},{xo=},{yo=},{xs=},{ys=},
+        {tif_dir=},
+        {out_dir=},
+        {files=},
+        {config=},
+        {time_coord_var=},
+        {clip_projected2match_historic=},
+        {withlatlon=},
+        {withproj=},
+        {projwin=},
+        {cleanup=},
+        """)
 
   #
   # Make the veg file first, then run-mask, then climate, then fire.
@@ -1933,6 +1946,7 @@ def main(start_year, years, xo, yo, xs, ys, tif_dir, out_dir,
     hc_years = 0
     if years == -1:
       filecount = len(glob.glob(in_tair_base + "*.tif"))
+      print(f"Looking in {in_tair_base} + '*.tif")
       print("Found %s files..." % filecount)
       hc_years = (filecount/12) - start_year
     else:
@@ -1985,14 +1999,14 @@ def main(start_year, years, xo, yo, xs, ys, tif_dir, out_dir,
         else:
           # Override start_year
           start_year = (end_hist.year - first_avail_year) + 1 
-          print("""Setting start year for projected data to be immediately 
+          print(f"""Setting start year for projected data to be immediately 
           following the historic data. 
-          End historic: {} 
-          Beginning projected: {}
-          start_year offset: {}""".format(end_hist.year, first_avail_year + start_year, start_year))
+          End historic: {end_hist.year} 
+          Beginning projected: {first_avail_year + start_year}
+          start_year offset: {start_year}""")
 
     # Set the spatial reference file. Use the first month of the starting year
-    sp_ref_file  = "{}{month:02d}_{starty:04d}.tif".format(in_tair_base, month=1, starty=first_avail_year),
+    sp_ref_file  = f"{in_tair_base}01_{first_avail_year:04d}.tif",
 
     # Calculates number of years for running all. Values are different
     # for historic versus projected.
