@@ -1471,8 +1471,8 @@ def ensure_contiguous_climates(climates):
   def get_time_index(nc_dataset):
     tV = nc_dataset.variables['time']
     idx = pd.DatetimeIndex(pd.date_range(
-      start=nc.num2date(tV[0], tV.units, tV.calendar).strftime(),
-      end=nc.num2date(tV[-1], tV.units, tV.calendar).strftime(),
+      start=netCDF4.num2date(tV[0], tV.units, tV.calendar).strftime(),
+      end=netCDF4.num2date(tV[-1], tV.units, tV.calendar).strftime(),
       freq='MS') # <-- month starts)
     )
     return idx
@@ -1481,9 +1481,9 @@ def ensure_contiguous_climates(climates):
     if i == len(climates) - 1:
       pass # end of list, nothing to do
     else:
-      ds = nc.Dataset(c)
+      ds = netCDF4.Dataset(c)
       idx = get_time_index(ds)
-      idx2 = get_time_index(nc.Dataset(climates[i+1]))
+      idx2 = get_time_index(netCDF4.Dataset(climates[i+1]))
       if (idx[-1] + 1) == idx2[0]:
         print("ALL OK: No gaps or overlaps in time axis!")
       else:
