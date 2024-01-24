@@ -2244,6 +2244,14 @@ base_ar5_rcp85_config = textwrap.dedent('''\
   h clim last yr = 2015
   h clim orig inst = 'CRU'
   h clim ver = 'TS40'
+
+  # works on tbc laptop
+  #h clim tair src = 'tas_mean_C_iem_cru_TS40_1901_2015/tas/tas_mean_C_CRU_TS40_historical_'
+  #h clim prec src = 'pr_total_mm_iem_cru_TS40_1901_2015/pr_total_mm_CRU_TS40_historical_'
+  #h clim rsds src = 'rsds_mean_MJ-m2-d1_iem_CRU-TS40_historical_1901_2015_fix/rsds/rsds_mean_MJ-m2-d1_iem_CRU-TS40_historical_'
+  #h clim vapo src = 'vap_mean_hPa_iem_CRU-TS40_historical_1901_2015_fix/vap/vap_mean_hPa_iem_CRU-TS40_historical_'
+
+  # works on GCP instance with iem-gen2-source-inputs disk mounted
   h clim tair src = 'climate/tas_mean_C_iem_cru_TS40_1901_2015/tas/tas_mean_C_CRU_TS40_historical_'
   h clim prec src = 'climate/pr_total_mm_iem_cru_TS40_1901_2015/pr/pr_total_mm_CRU_TS40_historical_'
   h clim rsds src = 'climate/rsds_mean_MJ-m2-d1_iem_CRU-TS40_historical_1901_2015_fix/rsds/rsds_mean_MJ-m2-d1_iem_CRU-TS40_historical_'
@@ -2270,6 +2278,14 @@ ncar_ccsm4_ar5_rcp85_config = textwrap.dedent('''\
   p clim ver = 'rcp85'
 
   p clim orig inst = 'NCAR-CCSM4'
+
+  # works on tbc laptop
+  #p clim tair src = 'tas_mean_C_ar5_NCAR-CCSM4_rcp85_2006_2100/tas/tas_mean_C_iem_ar5_NCAR-CCSM4_rcp85_'
+  #p clim prec src = 'pr_total_mm_ar5_NCAR-CCSM4_rcp85_2006_2100/pr/pr_total_mm_iem_ar5_NCAR-CCSM4_rcp85_'
+  #p clim rsds src = 'rsds_mean_MJ-m2-d1_ar5_NCAR-CCSM4_rcp85_2006_2100_fix/rsds/rsds_mean_MJ-m2-d1_iem_ar5_NCAR-CCSM4_rcp85_'
+  #p clim vapo src = 'vap_mean_hPa_ar5_NCAR-CCSM4_rcp85_2006_2100_fix/vap/vap_mean_hPa_iem_ar5_NCAR-CCSM4_rcp85_'
+
+  # works on GCP instance with iem-gen2-source-inputs disk mounted
   p clim tair src = 'climate/tas_mean_C_ar5_NCAR-CCSM4_rcp85_2006_2100/tas/tas_mean_C_iem_ar5_NCAR-CCSM4_rcp85_'
   p clim prec src = 'climate/pr_total_mm_ar5_NCAR-CCSM4_rcp85_2006_2100/pr/pr_total_mm_iem_ar5_NCAR-CCSM4_rcp85_'
   p clim rsds src = 'climate/rsds_mean_MJ-m2-d1_ar5_NCAR-CCSM4_rcp85_2006_2100_fix/rsds/rsds_mean_MJ-m2-d1_iem_ar5_NCAR-CCSM4_rcp85_'
@@ -2297,6 +2313,11 @@ fire_config = textwrap.dedent('''\
   p exp fire predicted fy = 2021
   p exp fire predicted ly = 2100
 
+  # works on tbc laptop
+  #h exp fire modeled path = 'fire_stuff/BestRep/NCAR-CCSM4_rcp85_CRU3/'
+  #h exp fire observed path = 'fire_stuff/AlaskaFireHistory_Polygons_1940_2020/AlaskaFireHistory_Polygons.gdb'
+
+  # works on GCP instance with iem-gen2-source-inputs disk mounted 
   h exp fire modeled path = 'alfresco_final_runs/IEM_AR5/BestRep/NCAR-CCSM4_rcp85_CRU3/'
   h exp fire observed path = 'fire_history/AlaskaFireHistory_Polygons_1940_2020/AlaskaFireHistory_Polygons.gdb'
   p exp fire predicted path = 'fire_stuff/BestRep/'
