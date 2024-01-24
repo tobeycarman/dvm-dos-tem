@@ -11,6 +11,7 @@ import multiprocessing as mp
 from contextlib import contextmanager
 
 import configobj
+import validate
 import argparse
 import textwrap
 import os
@@ -1854,6 +1855,97 @@ def verify_paths_in_config_dict(tif_dir, config):
         test_path = os.path.join(tif_dir, v)
         pretty_print_test_path(test_path, k)
 
+def build_inputs(**kwargs):
+
+  config = configobj.ConfigObj()
+  config.merge(configobj.ConfigObj(base_ar5_rcp85_config.split('\n')))
+  config.merge(configobj.ConfigObj(ncar_ccsm4_ar5_rcp85_config.split('\n')))
+  config.merge(configobj.ConfigObj(fire_config.split('\n')))
+
+  LAT = 66.90456036
+  LON = -150.61315818
+  YS = 71
+  XS = 27
+  TAG = "site_2a"
+
+
+  ## CAUTION nEED TO SET THE STRING WITH PROPER ORIGIN INSITITTION 
+  full_out_dir = f'input-staging-area/cru-ts40_ar5_rcp85_ncar-ccsm4_{TAG}_{YS}x{XS}'
+
+  aux_spec ="""
+    start_year = integer(0, 215)
+    years = integer(-1, 200)
+    xo = float()
+    yo = float()
+    xs = integer()
+    ys = integer()
+    tif_dir = string()
+    out_dir = string()
+    time_coord_var = boolean()
+    files = string_list()
+    clip_projected2match_historic = boolean()
+    withlatlon = boolean()
+    withproj = boolean()
+    projwin = boolean()
+    cleanup = boolean()
+  """
+
+  aux_settings = textwrap.dedent(f'''\n
+                                 start_year = 0
+                                 years = -1
+                                 xo = {LON}
+                                 yo = {LAT}
+                                 xs = {XS}
+                                 ys = {YS}
+                                 tif_dir = /data/iem-src-tifs/
+                                 out_dir = {full_out_dir}
+                                 time_coord_var = True
+                                 #files = run-mask,co2,projected-co2,vegetation
+                                 #files = run-mask,co2,projected-co2,vegetation,drainage,soil-texture,topo,fri-fire,historic-explicit-fire,historic-climate
+                                 files = projected-explicit-fire,projected-climate
+                                 clip_projected2match_historic = True
+                                 withlatlon = True
+                                 withproj = True
+                                 projwin = True
+                                 cleanup = True
+                                 ''')
+
+  settings = configobj.ConfigObj(aux_settings.split('\n'), configspec=aux_spec.split("\n"))
+  
+  settings.validate(validate.Validator(), preserve_errors = False)
+
+  # convert from lon, lat to x, y projection coordinates
+  settings['xo'], settings['yo'], _ = xform(settings['xo'], settings['yo'],
+                                            in_srs='EPSG:4326',
+                                            out_srs='EPSG:3338')
+
+  # Not sure what is up with this, but if we don't tak e 500m off the y offset
+  # (projection coords) then we end up with the lon/lat point consistently in
+  # the pixel just below the cropped area.
+  settings['yo'] = settings['yo'] - 500 
+
+
+  ulx, uly, lrx,lry = calc_pwin_str(settings['xo'], settings['yo'], 
+                                    xs=settings['xs'], ys=settings['ys'],
+                                    poi_loc='lower-left')
+  print("=========================")
+  print(f"should be this now...: -projwin {ulx} {uly} {lrx} {lry}")
+  print("=========================")
+        
+
+  print("............settings..........")
+  for k, v in settings.items():
+    print(k, v)
+
+  print("............config...........")
+  for k, v in config.items():
+    print(k, v)
+
+  main(config=config, **settings)
+  #main(start_year, years, xo, yo, xs, ys, tif_dir, out_dir, 
+  #       files=[], config=config, time_coord_var=False,
+  #       clip_projected2match_historic=False,
+  #       withlatlon=None, withproj=None, projwin=False, cleanup=False)  
 
 def main(start_year, years, xo, yo, xs, ys, tif_dir, out_dir, 
          files=[], config={}, time_coord_var=False,
