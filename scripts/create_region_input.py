@@ -2227,112 +2227,113 @@ def config_file_validator(arg_custom_config):
     raise argparse.ArgumentTypeError("Must be a valid path to custom config file")
   return arg_custom_config
 
+base_ar5_rcp85_config = textwrap.dedent('''\
+  veg src = 'ancillary/land_cover/v_0_4/iem_vegetation_model_input_v0_4.tif'
+
+  drainage src = 'ancillary/drainage/Lowland_1km.tif'
+
+  soil clay src = 'ancillary/BLISS_IEM/mu_claytotal_r_pct_0_25mineral_2_AK_CAN.img'
+  soil sand src = 'ancillary/BLISS_IEM/mu_sandtotal_r_pct_0_25mineral_2_AK_CAN.img'
+  soil silt src = 'ancillary/BLISS_IEM/mu_silttotal_r_pct_0_25mineral_2_AK_CAN.img'
+
+  topo slope src = 'ancillary/slope/iem_prism_slope_1km.tif'
+  topo aspect src = 'ancillary/aspect/iem_prism_aspect_1km.tif'
+  topo elev src = 'ancillary/elevation/iem_prism_dem_1km.tif'
+
+  h clim first yr = 1901
+  h clim last yr = 2015
+  h clim orig inst = 'CRU'
+  h clim ver = 'TS40'
+  h clim tair src = 'climate/tas_mean_C_iem_cru_TS40_1901_2015/tas/tas_mean_C_CRU_TS40_historical_'
+  h clim prec src = 'climate/pr_total_mm_iem_cru_TS40_1901_2015/pr/pr_total_mm_CRU_TS40_historical_'
+  h clim rsds src = 'climate/rsds_mean_MJ-m2-d1_iem_CRU-TS40_historical_1901_2015_fix/rsds/rsds_mean_MJ-m2-d1_iem_CRU-TS40_historical_'
+  h clim vapo src = 'climate/vap_mean_hPa_iem_CRU-TS40_historical_1901_2015_fix/vap/vap_mean_hPa_iem_CRU-TS40_historical_'
+
+  fire fri src = 'iem_ancillary_data/Fire/FRI.tif'
+''')
+
+mri_cgcm3_ar5_rcp85_config = textwrap.dedent('''\
+  p clim first yr = 2006
+  p clim last yr = 2100
+  p clim ver = 'rcp85'
+
+  p clim orig inst = 'MRI-CGCM3'
+  p clim tair src = 'tas_mean_C_ar5_MRI-CGCM3_rcp85_2006_2100/tas/tas_mean_C_iem_ar5_MRI-CGCM3_rcp85_'
+  p clim prec src = 'pr_total_mm_ar5_MRI-CGCM3_rcp85_2006_2100/pr/pr_total_mm_iem_ar5_MRI-CGCM3_rcp85_'
+  p clim rsds src = 'rsds_mean_MJ-m2-d1_ar5_MRI-CGCM3_rcp85_2006_2100_fix/rsds/rsds_mean_MJ-m2-d1_iem_ar5_MRI-CGCM3_rcp85_'
+  p clim vapo src = 'vap_mean_hPa_ar5_MRI-CGCM3_rcp85_2006_2100_fix/vap/vap_mean_hPa_iem_ar5_MRI-CGCM3_rcp85_'
+''')
+
+ncar_ccsm4_ar5_rcp85_config = textwrap.dedent('''\
+  p clim first yr = 2006
+  p clim last yr = 2100
+  p clim ver = 'rcp85'
+
+  p clim orig inst = 'NCAR-CCSM4'
+  p clim tair src = 'climate/tas_mean_C_ar5_NCAR-CCSM4_rcp85_2006_2100/tas/tas_mean_C_iem_ar5_NCAR-CCSM4_rcp85_'
+  p clim prec src = 'climate/pr_total_mm_ar5_NCAR-CCSM4_rcp85_2006_2100/pr/pr_total_mm_iem_ar5_NCAR-CCSM4_rcp85_'
+  p clim rsds src = 'climate/rsds_mean_MJ-m2-d1_ar5_NCAR-CCSM4_rcp85_2006_2100_fix/rsds/rsds_mean_MJ-m2-d1_iem_ar5_NCAR-CCSM4_rcp85_'
+  p clim vapo src = 'climate/vap_mean_hPa_ar5_NCAR-CCSM4_rcp85_2006_2100_fix/vap/vap_mean_hPa_iem_ar5_NCAR-CCSM4_rcp85_'
+''')
+
+gfdl_cm3_ar5_rcp85_config = textwrap.dedent('''\
+  p clim first yr = 2006
+  p clim last yr = 2100
+
+  p clim orig inst = 'GFDL-CM3'
+  p clim tair src = 'tas_mean_C_alf_ar5_GFDL-CM3_rcp85_'
+  p clim prec src = 'pr_total_mm_alf_ar5_GFDL-CM3_rcp85_'
+  p clim rsds src = 'rsds_mean_MJ-m2-d1_alf_ar5_GFDL-CM3_rcp85_'
+  p clim vapo src = 'vap_mean_hPa_alf_ar5_GFDL-CM3_rcp85_'
+''')
+
+fire_config = textwrap.dedent('''\
+  h exp fire modeled fy = 1901
+  h exp fire modeled ly = 1949
+
+  h exp fire observed fy = 1950
+  h exp fire observed ly = 2020
+
+  p exp fire predicted fy = 2021
+  p exp fire predicted ly = 2100
+
+  h exp fire modeled path = 'alfresco_final_runs/IEM_AR5/BestRep/NCAR-CCSM4_rcp85_CRU3/'
+  h exp fire observed path = 'fire_history/AlaskaFireHistory_Polygons_1940_2020/AlaskaFireHistory_Polygons.gdb'
+  p exp fire predicted path = 'fire_stuff/BestRep/'
+''')
+
+# --> note that with fire the recent observations are readily available, up to 
+# the most recent fire year, whereas climate lags behind, so the historic/projected
+# split will not fall at the same year
+#
+# --> note that for projected, the scenario is only in the path, and not the file
+# name so it will be easy to parameterize later, and we don;t have to keep a full separate config
+# block for all the different data from different models and institutions.
+#
+
+#   1901 -thru-> 1949: fire_stuff/BestRep/NCAR-CCSM4_rcp85_CRU3/BurnSeverity_26_{}.tif, FireScar_26_{}.tif
+#   1950 -thru-> 2020: fire_stuff/AlaskaFireHistory_Polygons_1940_2020/AlaskaFireHistory_Polygons.gdb
+#   2021 -thru-> 2100: fire_stuff/BestRep/{}/BurnSeverity_26_{}.tif, FireScar_26_{}.tif
+
+# uses GCM modeled historic climate
+# GFDL-CM3_rcp85
+# GISS-E2-R_rcp85
+# IPSL-CM5A-LR_rcp85
+# MRI-CGCM3_rcp85
+# NCAR-CCSM4_rcp85
+
+# uses cru historic climate
+# NCAR-CCSM4_rcp85_CRU3 
+
+
+  # tifs = '/Users/tobeycarman/Documents/SEL/snap-data-2019/'
+  # other = 'fire_stuff/BestRep/'
+  # src = 'NCAR-CCSM4_rcp85_CRU3/'
+  # # #variable = 'BurnSeverity_26_{}.tif'.format()
+
+
+
 if __name__ == '__main__':
-
-  base_ar5_rcp85_config = textwrap.dedent('''\
-    veg src = 'ancillary/land_cover/v_0_4/iem_vegetation_model_input_v0_4.tif'
-
-    drainage src = 'ancillary/drainage/Lowland_1km.tif'
-
-    soil clay src = 'ancillary/BLISS_IEM/mu_claytotal_r_pct_0_25mineral_2_AK_CAN.img'
-    soil sand src = 'ancillary/BLISS_IEM/mu_sandtotal_r_pct_0_25mineral_2_AK_CAN.img'
-    soil silt src = 'ancillary/BLISS_IEM/mu_silttotal_r_pct_0_25mineral_2_AK_CAN.img'
-
-    topo slope src = 'ancillary/slope/iem_prism_slope_1km.tif'
-    topo aspect src = 'ancillary/aspect/iem_prism_aspect_1km.tif'
-    topo elev src = 'ancillary/elevation/iem_prism_dem_1km.tif'
-
-    h clim first yr = 1901
-    h clim last yr = 2015
-    h clim orig inst = 'CRU'
-    h clim ver = 'TS40'
-    h clim tair src = 'tas_mean_C_iem_cru_TS40_1901_2015/tas/tas_mean_C_CRU_TS40_historical_'
-    h clim prec src = 'pr_total_mm_iem_cru_TS40_1901_2015/pr_total_mm_CRU_TS40_historical_'
-    h clim rsds src = 'rsds_mean_MJ-m2-d1_iem_CRU-TS40_historical_1901_2015_fix/rsds/rsds_mean_MJ-m2-d1_iem_CRU-TS40_historical_'
-    h clim vapo src = 'vap_mean_hPa_iem_CRU-TS40_historical_1901_2015_fix/vap/vap_mean_hPa_iem_CRU-TS40_historical_'
-
-    fire fri src = 'iem_ancillary_data/Fire/FRI.tif'
-  ''')
-
-  mri_cgcm3_ar5_rcp85_config = textwrap.dedent('''\
-    p clim first yr = 2006
-    p clim last yr = 2100
-    p clim ver = 'rcp85'
-
-    p clim orig inst = 'MRI-CGCM3'
-    p clim tair src = 'tas_mean_C_ar5_MRI-CGCM3_rcp85_2006_2100/tas/tas_mean_C_iem_ar5_MRI-CGCM3_rcp85_'
-    p clim prec src = 'pr_total_mm_ar5_MRI-CGCM3_rcp85_2006_2100/pr/pr_total_mm_iem_ar5_MRI-CGCM3_rcp85_'
-    p clim rsds src = 'rsds_mean_MJ-m2-d1_ar5_MRI-CGCM3_rcp85_2006_2100_fix/rsds/rsds_mean_MJ-m2-d1_iem_ar5_MRI-CGCM3_rcp85_'
-    p clim vapo src = 'vap_mean_hPa_ar5_MRI-CGCM3_rcp85_2006_2100_fix/vap/vap_mean_hPa_iem_ar5_MRI-CGCM3_rcp85_'
-  ''')
-
-  ncar_ccsm4_ar5_rcp85_config = textwrap.dedent('''\
-    p clim first yr = 2006
-    p clim last yr = 2100
-    p clim ver = 'rcp85'
-
-    p clim orig inst = 'NCAR-CCSM4'
-    p clim tair src = 'tas_mean_C_ar5_NCAR-CCSM4_rcp85_2006_2100/tas/tas_mean_C_iem_ar5_NCAR-CCSM4_rcp85_'
-    p clim prec src = 'pr_total_mm_ar5_NCAR-CCSM4_rcp85_2006_2100/pr/pr_total_mm_iem_ar5_NCAR-CCSM4_rcp85_'
-    p clim rsds src = 'rsds_mean_MJ-m2-d1_ar5_NCAR-CCSM4_rcp85_2006_2100_fix/rsds/rsds_mean_MJ-m2-d1_iem_ar5_NCAR-CCSM4_rcp85_'
-    p clim vapo src = 'vap_mean_hPa_ar5_NCAR-CCSM4_rcp85_2006_2100_fix/vap/vap_mean_hPa_iem_ar5_NCAR-CCSM4_rcp85_'
-  ''')
-
-  gfdl_cm3_ar5_rcp85_config = textwrap.dedent('''\
-    p clim first yr = 2006
-    p clim last yr = 2100
-
-    p clim orig inst = 'GFDL-CM3'
-    p clim tair src = 'tas_mean_C_alf_ar5_GFDL-CM3_rcp85_'
-    p clim prec src = 'pr_total_mm_alf_ar5_GFDL-CM3_rcp85_'
-    p clim rsds src = 'rsds_mean_MJ-m2-d1_alf_ar5_GFDL-CM3_rcp85_'
-    p clim vapo src = 'vap_mean_hPa_alf_ar5_GFDL-CM3_rcp85_'
-  ''')
-
-  fire_config = textwrap.dedent('''\
-    h exp fire modeled fy = 1901
-    h exp fire modeled ly = 1949
-
-    h exp fire observed fy = 1950
-    h exp fire observed ly = 2020
-
-    p exp fire predicted fy = 2021
-    p exp fire predicted ly = 2100
-
-    h exp fire modeled path = 'fire_stuff/BestRep/NCAR-CCSM4_rcp85_CRU3/'
-    h exp fire observed path = 'fire_stuff/AlaskaFireHistory_Polygons_1940_2020/AlaskaFireHistory_Polygons.gdb'
-    p exp fire predicted path = 'fire_stuff/BestRep/'
-  ''')
-
-  # --> note that with fire the recent observations are readily available, up to 
-  # the most recent fire year, whereas climate lags behind, so the historic/projected
-  # split will not fall at the same year
-  #
-  # --> note that for projected, the scenario is only in the path, and not the file
-  # name so it will be easy to parameterize later, and we don;t have to keep a full separate config
-  # block for all the different data from different models and institutions.
-  #
-
-  #   1901 -thru-> 1949: fire_stuff/BestRep/NCAR-CCSM4_rcp85_CRU3/BurnSeverity_26_{}.tif, FireScar_26_{}.tif
-  #   1950 -thru-> 2020: fire_stuff/AlaskaFireHistory_Polygons_1940_2020/AlaskaFireHistory_Polygons.gdb
-  #   2021 -thru-> 2100: fire_stuff/BestRep/{}/BurnSeverity_26_{}.tif, FireScar_26_{}.tif
-
-  # uses GCM modeled historic climate
-  # GFDL-CM3_rcp85
-  # GISS-E2-R_rcp85
-  # IPSL-CM5A-LR_rcp85
-  # MRI-CGCM3_rcp85
-  # NCAR-CCSM4_rcp85
-
-  # uses cru historic climate
-  # NCAR-CCSM4_rcp85_CRU3 
-
-
-    # tifs = '/Users/tobeycarman/Documents/SEL/snap-data-2019/'
-    # other = 'fire_stuff/BestRep/'
-    # src = 'NCAR-CCSM4_rcp85_CRU3/'
-    # # #variable = 'BurnSeverity_26_{}.tif'.format()
-
 
   fileChoices = ['run-mask', 'co2', 'projected-co2', 'vegetation', 'drainage', 'soil-texture', 'topo',
                  'fri-fire', 'historic-explicit-fire', 'projected-explicit-fire',
