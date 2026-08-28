@@ -2155,9 +2155,10 @@ def cmdline_define():
         Prints n/a if the CMT does not exist in the file!'''))
 
   parser.add_argument('--report-all-cmts', nargs=1, metavar=('FOLDER'),
-      help=textwrap.dedent('''Prints out a table with all the CMT names found
-        in each file found in the %(metavar)s. Only looks at files named like:
-        'cmt_*.txt' in the %(metavar)s.'''))
+      help=textwrap.dedent('''Checks that every 'cmt_*.txt' file in FOLDER
+        contains the same set of CMTs, then prints a single table listing all
+        CMT keys, numbers, names, and comments. Exits with an error if any
+        file has a different set of CMTs.'''))
 
   parser.add_argument('--plot-static-lai', nargs=2, metavar=('INFOLDER','CMT'),
       help=textwrap.dedent('''Makes plots of the static_lai parameter. 
@@ -2534,15 +2535,34 @@ def cmdline_run(args):
 
     infolder = args.report_all_cmts[0]
 
-    all_files = glob.glob(os.path.join(args.report_all_cmts[0], 'cmt_*.txt'))
+    all_files = sorted(glob.glob(os.path.join(infolder, 'cmt_*.txt')))
 
+    file_cmts = {}
     for f in all_files:
-      cmts = get_CMTs_in_file(f)
-      print(f)
-      print("{:>7} {:>5}   {:<50s} {}".format('key', 'num', 'name', 'comment'))
-      for c in cmts:
-        print("{:>7} {:>5d}   {:50s} {}".format(c['cmtkey'], c['cmtnum'], c['cmtname'], c['cmtcomment']))
-      print("")
+      file_cmts[f] = get_CMTs_in_file(f)
+
+    # Use the first file as the reference; compare all others against it.
+    ref_file = all_files[0]
+    ref_keys = [c['cmtnum'] for c in file_cmts[ref_file]]
+    mismatches = []
+    for f in all_files[1:]:
+      keys = [c['cmtnum'] for c in file_cmts[f]]
+      if keys != ref_keys:
+        mismatches.append(f)
+
+    if mismatches:
+      print("ERROR: Not all parameter files contain the same CMTs.")
+      print("Reference file: {}".format(ref_file))
+      print("  CMTs: {}".format(ref_keys))
+      for f in mismatches:
+        keys = [c['cmtnum'] for c in file_cmts[f]]
+        print("Mismatch in: {}".format(f))
+        print("  CMTs: {}".format(keys))
+      return 1
+
+    print("{:>7} {:>5}   {:<50s} {}".format('key', 'num', 'name', 'comment'))
+    for c in file_cmts[ref_file]:
+      print("{:>7} {:>5d}   {:50s} {}".format(c['cmtkey'], c['cmtnum'], c['cmtname'], c['cmtcomment']))
 
     return 0
 
