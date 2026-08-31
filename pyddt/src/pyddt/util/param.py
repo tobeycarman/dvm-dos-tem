@@ -2094,6 +2094,31 @@ def update_inplace(new_value, param_dir, pname, cmtnum, pftnum=None):
     updated_file.write('\n'.join(formatted))  
 
 
+def _get_named_cmap(name):
+  '''
+  Version-safe lookup of a named matplotlib colormap.
+
+  matplotlib.colormaps (added in 3.5) is the modern API; matplotlib.cm.get_cmap
+  and pyplot.cm.get_cmap were deprecated in 3.7 and removed in later versions,
+  so we fall back to them only if matplotlib.colormaps isn't available.
+
+  Parameters
+  ----------
+  name : str
+      Name of a registered matplotlib colormap, e.g. 'tab20'.
+
+  Returns
+  -------
+  matplotlib.colors.Colormap
+  '''
+  import matplotlib
+  if hasattr(matplotlib, 'colormaps'):
+    return matplotlib.colormaps[name]
+  else:
+    import matplotlib.pyplot as plt
+    return plt.cm.get_cmap(name)
+
+
 def build_cmt_colormap(pdir, neutral='#c8c8c8'):
   '''
   Builds a matplotlib ListedColormap mapping CMT numbers to unique colors.
@@ -2130,7 +2155,6 @@ def build_cmt_colormap(pdir, neutral='#c8c8c8'):
   >>> import matplotlib.pyplot as plt
   >>> plt.imshow(cmt_raster, cmap=cmap, norm=norm)
   '''
-  import matplotlib.pyplot as plt
   import matplotlib.colors as mcolors
 
   all_files = sorted(glob.glob(os.path.join(pdir, 'cmt_*.txt')))
@@ -2160,7 +2184,7 @@ def build_cmt_colormap(pdir, neutral='#c8c8c8'):
   # 60-color qualitative pool: tab20 + tab20b + tab20c
   pool = []
   for cn in ('tab20', 'tab20b', 'tab20c'):
-    pool.extend(plt.cm.get_cmap(cn).colors)
+    pool.extend(_get_named_cmap(cn).colors)
 
   color_list = [neutral] * 100
   for i, cmt_num in enumerate(cmt_nums):
