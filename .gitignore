@@ -49,8 +49,3 @@ Debug/*
 # Ignore hidden vagrant directory
 
 .vagrant/*
-
-# assorted temporary stuff
-bundle*
-
-.dvc/*
