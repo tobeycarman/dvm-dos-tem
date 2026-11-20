@@ -6,7 +6,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: ./scripts/test.sh mechanical
+Usage: ./scripts/test.sh mechanical|integration
 
 Run a supported dvm-dos-tem test tier in the dvmdostem-dev Docker service.
 
@@ -45,6 +45,10 @@ case $1 in
       scons test
     docker compose exec -T --workdir /work dvmdostem-dev \
       ./dvmdostem-tests
+    ;;
+  integration)
+    docker compose exec -T --workdir /work dvmdostem-dev \
+      pytest -q pyddt/tests/test_restart_run_mechanics.py
     ;;
   *)
     usage

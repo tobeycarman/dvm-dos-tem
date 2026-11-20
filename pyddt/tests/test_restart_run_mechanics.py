@@ -1,237 +1,240 @@
 #!/usr/bin/env python
+"""Integration tests for stage transitions and restart-file mechanics.
 
-# Test the mechanics of using the "restart from" functionality that now
-# exists in the config file. User uses combination of the setting in the 
-# config file and the command line flag.
+Each successful workflow uses a fresh temporary working directory, the pinned
+test-data bundle, and one enabled pixel. The stage chain is:
 
+    pre-run + equilibrium -> spinup -> transient -> scenario
 
-import os
+The first stage produces ``restart-eq.nc``; each later stage consumes the
+previous stage's restart artifact. The tests verify both the artifacts and the
+model's per-pixel ``run_status`` value. Invalid restart paths and invalid
+restart stages are tested in separate fresh output directories so expected
+failures cannot affect the successful workflow.
+"""
+
 import json
-import pytest
 import pathlib
 import subprocess
 
 import netCDF4 as nc
+import pytest
 
-import pyddt.util.setup_working_directory as swd
 import pyddt.util.runmask
+import pyddt.util.setup_working_directory as swd
+from pyddt.util.test_data import ensure_bundle
+
+
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+BUNDLE_LOCK = REPO_ROOT / "testing-data" / "bundle-lock.json"
+
+
+def _configure_run(run_directory, output_directory, restart_from=""):
+    """Set output and restart paths in an isolated run's copied config."""
+    config_file = pathlib.Path(run_directory, "config", "config.js")
+    with config_file.open(encoding="utf-8") as config_handle:
+        config = json.load(config_handle)
+
+    config["IO"]["output_dir"] = str(output_directory)
+    config["IO"]["restart_from"] = str(restart_from)
+    with config_file.open("w", encoding="utf-8") as config_handle:
+        json.dump(config, config_handle, indent=2)
+    return config_file
+
+
+def _run_stage(run_directory, output_directory, arguments, restart_from=""):
+    """Run one successful model stage and return its output directory."""
+    config_file = _configure_run(
+        run_directory, output_directory, restart_from=restart_from
+    )
+    command = [
+        "dvmdostem",
+        "-f",
+        str(config_file),
+        "-l",
+        "monitor",
+    ] + arguments
+    result = subprocess.run(
+        command,
+        cwd=str(run_directory),
+        text=True,
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        raise AssertionError(
+            "Model stage failed with exit code {}:\n{}".format(
+                result.returncode, result.stderr
+            )
+        )
+    return pathlib.Path(output_directory)
+
+
+def _run_stage_expect_failure(
+    run_directory, output_directory, arguments, restart_from
+):
+    """Run one stage that must reject its restart configuration."""
+    config_file = _configure_run(
+        run_directory, output_directory, restart_from=restart_from
+    )
+    command = [
+        "dvmdostem",
+        "-f",
+        str(config_file),
+        "-l",
+        "monitor",
+    ] + arguments
+    result = subprocess.run(
+        command,
+        cwd=str(run_directory),
+        text=True,
+        capture_output=True,
+    )
+    assert result.returncode != 0, result.stdout + result.stderr
+
+
+def _assert_successful_pixel(output_directory):
+    """Require the selected pixel to report a completed model stage."""
+    status_file = output_directory / "run_status.nc"
+    with nc.Dataset(status_file) as dataset:
+        assert dataset.variables["run_status"][1, 1] == 100
 
 
 @pytest.fixture(scope="session")
-def restart_run_directory(tmp_path_factory):
-    '''
-    Returns
-    -------
-
-    A path to a temporary directory which contains the setup for doing restart
-    runs. 
-    '''
-
-    # Use the package default demo data
-    DEMO_DATA = '/work/demo-data/cru-ts40_ar5_rcp85_ncar-ccsm4_toolik_field_station_10x10/'
-
-    # Make a place to hold the run
-    restart_run_dir = tmp_path_factory.mktemp("test-restart-mechanics")
-
-    # Shouldn't need this - if the tmp_path_factory is working correctly
-    # if(os.path.isdir(restart_run_dir)):
-    #     shutil.rmtree(restart_run_dir)
-
-    # Scaffold the run
-    CMD = f"--force --input-data-path {DEMO_DATA} {restart_run_dir}"
-    swd.cmdline_run(swd.cmdline_parse(CMD.split(" ")))
-
-    # Adjust run mask
-    pyddt.util.runmask.cmdline_run(pyddt.util.runmask.cmdline_parse(f'--reset --yx 1 1 {restart_run_dir}/run-mask.nc'.split(' ')))
-
-    return restart_run_dir
-
-@pytest.fixture(scope="session")
-def restart_pr_eq_base_run(restart_run_directory):
-
-  base_run_output_dir = pathlib.Path(restart_run_directory, 'output_pr_eq')
-
-  CONFIG_FILE = f"{restart_run_directory}/config/config.js"
-  with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-    config = json.load(f)
-  config["general"]["output_global_attributes"]["run_name"] = "Running PR, EQ base run."
-  config["general"]["output_global_attributes"]["description"] = "junk run for testing restart"
-  config["IO"]["output_dir"] = str(base_run_output_dir)
-  with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
-    json.dump(config, f, indent=2)
-
-  os.chdir(restart_run_directory)
-  completed_process = subprocess.run(f"dvmdostem -f {CONFIG_FILE} -p5 -e5 -s0 -t0 -n0 -l monitor".split(' '))
-  if completed_process.returncode != 0:
-      raise RuntimeError("Model run failed")  
-
-  return base_run_output_dir
-
-@pytest.fixture(scope="session")
-def restart_sp_from_eq(restart_run_directory, restart_pr_eq_base_run):
-
-  sp_from_eq_output_dir = pathlib.Path(restart_run_directory, 'output_sp_from_eq')
-
-  CONFIG_FILE = f"{restart_run_directory}/config/config.js"
-  with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-    config = json.load(f)
-  config["general"]["output_global_attributes"]["run_name"] = "Running SP, restarting from EQ."
-  config["general"]["output_global_attributes"]["description"] = "junk run for testing restart"
-  
-  config["IO"]["restart_from"] = str(pathlib.Path(restart_pr_eq_base_run, 'restart-eq.nc'))
-  config["IO"]["output_dir"] = str(sp_from_eq_output_dir)
-  
-  with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
-    json.dump(config, f, indent=2)
-
-  os.chdir(restart_run_directory)
-  completed_process = subprocess.run(f"dvmdostem -f {CONFIG_FILE} -p0 -e0 -s5 -t0 -n0 -l monitor".split(' '))
-  if completed_process.returncode != 0:
-      raise RuntimeError("Model run failed")  
-
-  return sp_from_eq_output_dir
-
-@pytest.fixture(scope="session")
-def restart_tr_from_sp(restart_run_directory, restart_sp_from_eq):
-
-  tr_from_sp_output_dir = pathlib.Path(restart_run_directory, 'output_tr_from_sp')
-
-  CONFIG_FILE = f"{restart_run_directory}/config/config.js"
-  with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-    config = json.load(f)
-  config["general"]["output_global_attributes"]["run_name"] = "Running TR, restarting from SP."
-  config["general"]["output_global_attributes"]["description"] = "junk run for testing restart"
-
-  config["IO"]["restart_from"] = str(pathlib.Path(restart_sp_from_eq, 'restart-sp.nc'))
-  config["IO"]["output_dir"] = str(tr_from_sp_output_dir)
-
-  with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
-    json.dump(config, f, indent=2)
-
-  os.chdir(restart_run_directory)
-  completed_process = subprocess.run(f"dvmdostem -f {CONFIG_FILE} -p0 -e0 -s0 -t5 -n0 -l debug".split(' '))
-  if completed_process.returncode != 0:
-      raise RuntimeError("Model run failed")
-
-  return tr_from_sp_output_dir
-
-@pytest.fixture(scope="session")
-def restart_sc_from_tr(restart_run_directory, restart_tr_from_sp):
-
-  sc_from_tr_output_dir = pathlib.Path(restart_run_directory, 'output_sc_from_tr')
-
-  CONFIG_FILE = f"{restart_run_directory}/config/config.js"
-  with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-    config = json.load(f)
-  config["general"]["output_global_attributes"]["run_name"] = "Running SC, restarting from TR."
-  config["general"]["output_global_attributes"]["description"] = "junk run for testing restart"
-
-  config["IO"]["restart_from"] = str(pathlib.Path(restart_tr_from_sp, 'restart-tr.nc'))
-  config["IO"]["output_dir"] = str(sc_from_tr_output_dir)
-
-  with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
-    json.dump(config, f, indent=2)
-
-  os.chdir(restart_run_directory)
-  completed_process = subprocess.run(f"dvmdostem -f {CONFIG_FILE} -p0 -e0 -s0 -t0 -n5 -l debug".split(' '))
-  if completed_process.returncode != 0:
-      raise RuntimeError("Model run failed")
-
-  return sc_from_tr_output_dir
-
-@pytest.fixture(autouse=True)
-def bad_restart_from_path(restart_run_directory):
-
-  # arrange
-  CONFIG_FILE = f"{restart_run_directory}/config/config.js"
-  with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-      config = json.load(f)
-      config_backup = config
-
-  config["IO"]["restart_from"] = "/bad/path/to/restart.nc"
-  config["IO"]["output_dir"] = str(pathlib.Path(restart_run_directory, 'output_bad_restart'))
-
-  with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
-      json.dump(config, f, indent=2)
-
-  os.chdir(restart_run_directory)
-  completed_process = subprocess.run(f"dvmdostem -f {CONFIG_FILE} -p0 -e0 -s5 -t0 -n0 -l debug".split(' '))
-
-  if completed_process.returncode == 0:
-     raise RuntimeError("Model run succeeded but it should have failed due to bad restart path")
-
-  yield 
-
-  # Put the config back the way it was so that other tests using this directory
-  # don't fail...
-  with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
-      json.dump(config_backup, f, indent=2)
+def bundle_input_directory():
+    """Fetch the locked bundle and return its model-input directory."""
+    bundle_directory = ensure_bundle(BUNDLE_LOCK)
+    input_directory = bundle_directory / "data" / "apex_2km_buffer"
+    assert input_directory.is_dir()
+    return input_directory
 
 
-def test_try_restart_pr_eq(restart_run_directory, restart_pr_eq_base_run):
-  '''
-  Make sure that user can't specify restart run for pr or eq stage. This should
-  fail because there should be no way to do a valid restart for the pr or eq
-  stage. In order to test it, we use the restart_pr_eq_base_run fixture to get a
-  valid restart file from the pr/eq run, and then try to use that to restart a
-  pr run. This should fail. If you run the test with -s you will see a
-  successful run first, followed by the failed run.
-  '''
+@pytest.fixture
+def isolated_run_directory(tmp_path, bundle_input_directory):
+    """Create a fresh run workspace and enable only pixel (1, 1)."""
+    run_directory = tmp_path / "stage-restart-run"
+    swd.cmdline_run(
+        swd.cmdline_parse(
+            [
+                "--force",
+                "--input-data-path",
+                str(bundle_input_directory),
+                str(run_directory),
+            ]
+        )
+    )
+    pyddt.util.runmask.cmdline_run(
+        pyddt.util.runmask.cmdline_parse(
+            [
+                "--reset",
+                "--yx",
+                "1",
+                "1",
+                str(run_directory / "run-mask.nc"),
+            ]
+        )
+    )
+    return run_directory
 
-  CONFIG_FILE = f"{restart_run_directory}/config/config.js"
-  with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-      config = json.load(f)
 
-  config["IO"]["restart_from"] = str(pathlib.Path(restart_pr_eq_base_run, 'restart-eq.nc'))
-  config["IO"]["output_dir"] = str(pathlib.Path(restart_run_directory, 'output_bad_pr_restart'))
+@pytest.fixture
+def stage_outputs(isolated_run_directory):
+    """Run and return the complete successful restart chain."""
+    run_directory = isolated_run_directory
+    pre_run_eq = _run_stage(
+        run_directory,
+        run_directory / "output_pr_eq",
+        ["-p", "5", "-e", "5", "-s", "0", "-t", "0", "-n", "0"],
+    )
+    spinup = _run_stage(
+        run_directory,
+        run_directory / "output_sp_from_eq",
+        ["-p", "0", "-e", "0", "-s", "5", "-t", "0", "-n", "0"],
+        restart_from=pre_run_eq / "restart-eq.nc",
+    )
+    transient = _run_stage(
+        run_directory,
+        run_directory / "output_tr_from_sp",
+        ["-p", "0", "-e", "0", "-s", "0", "-t", "5", "-n", "0"],
+        restart_from=spinup / "restart-sp.nc",
+    )
+    scenario = _run_stage(
+        run_directory,
+        run_directory / "output_sc_from_tr",
+        ["-p", "0", "-e", "0", "-s", "0", "-t", "0", "-n", "5"],
+        restart_from=transient / "restart-tr.nc",
+    )
+    return {
+        "run_directory": run_directory,
+        "pr_eq": pre_run_eq,
+        "sp": spinup,
+        "tr": transient,
+        "sc": scenario,
+    }
 
-  with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
-      json.dump(config, f, indent=2)
-  
-  os.chdir(restart_run_directory)
-  completed_process = subprocess.run(f"dvmdostem -f {CONFIG_FILE} -p5 -e5 -s0 -t0 -n0 -l debug".split(' '))
-  assert completed_process.returncode != 0
 
-  completed_process = subprocess.run(f"dvmdostem -f {CONFIG_FILE} -p0 -e5 -s0 -t0 -n0 -l debug".split(' '))
-  assert completed_process.returncode != 0
+def test_stage_restart_workflow_produces_restart_artifacts(stage_outputs):
+    """Every stage writes the restart artifact consumed by the next stage."""
+    assert (stage_outputs["pr_eq"] / "restart-eq.nc").exists()
+    assert (stage_outputs["sp"] / "restart-sp.nc").exists()
+    assert (stage_outputs["tr"] / "restart-tr.nc").exists()
+    assert (stage_outputs["sc"] / "restart-sc.nc").exists()
 
 
+def test_stage_restart_workflow_reports_successful_status(stage_outputs):
+    """Every completed stage reports status 100 for the enabled pixel."""
+    for stage_name in ("pr_eq", "sp", "tr", "sc"):
+        _assert_successful_pixel(stage_outputs[stage_name])
 
-def test_restart_pr_eq_base_run(restart_run_directory, restart_pr_eq_base_run):
-    assert pathlib.Path(restart_run_directory, 'output_pr_eq', 'restart-eq.nc').exists()
-    assert nc.Dataset(f'{restart_run_directory}/output_pr_eq/run_status.nc').variables['run_status'][1,1] == 100
 
-def test_restart_sp_from_eq(restart_run_directory, restart_sp_from_eq):
-    assert pathlib.Path(restart_run_directory, 'output_sp_from_eq', 'restart-sp.nc').exists()
-    assert nc.Dataset(f'{restart_run_directory}/output_sp_from_eq/run_status.nc').variables['run_status'][1,1] == 100
+def test_restart_eq_file_cannot_start_pr_or_eq(stage_outputs, tmp_path):
+    """A restart file cannot be supplied to the pre-run or equilibrium stage."""
+    run_directory = stage_outputs["run_directory"]
+    restart_file = stage_outputs["pr_eq"] / "restart-eq.nc"
 
-def test_restart_tr_from_sp(restart_run_directory, restart_tr_from_sp):
-    assert pathlib.Path(restart_run_directory, 'output_tr_from_sp', 'restart-tr.nc').exists()
-    assert nc.Dataset(f'{restart_run_directory}/output_tr_from_sp/run_status.nc').variables['run_status'][1,1] == 100
+    _run_stage_expect_failure(
+        run_directory,
+        tmp_path / "output-invalid-pr-restart",
+        ["-p", "5", "-e", "5", "-s", "0", "-t", "0", "-n", "0"],
+        restart_from=restart_file,
+    )
+    _run_stage_expect_failure(
+        run_directory,
+        tmp_path / "output-invalid-eq-restart",
+        ["-p", "0", "-e", "5", "-s", "0", "-t", "0", "-n", "0"],
+        restart_from=restart_file,
+    )
 
-def test_restart_sc_from_tr(restart_sc_from_tr):
-    assert pathlib.Path(restart_sc_from_tr, 'restart-sc.nc').exists()
-    assert nc.Dataset(f'{restart_sc_from_tr}/run_status.nc').variables['run_status'][1,1] == 100
 
-def test_bad_restart_from_path(restart_run_directory, bad_restart_from_path):
-  '''This is funky - most of the test is being done in the fixture...basically
-  with a bad restart path, the model should fail to run before nearly anything
-  happens. So thats what happens in the fixture and we just yield it to here.
-  There isn't much to check here...'''
+def test_invalid_restart_path_fails(bundle_input_directory, tmp_path):
+    """A missing restart file fails before a stage can run."""
+    run_directory = tmp_path / "invalid-restart-run"
+    swd.cmdline_run(
+        swd.cmdline_parse(
+            [
+                "--force",
+                "--input-data-path",
+                str(bundle_input_directory),
+                str(run_directory),
+            ]
+        )
+    )
+    pyddt.util.runmask.cmdline_run(
+        pyddt.util.runmask.cmdline_parse(
+            [
+                "--reset",
+                "--yx",
+                "1",
+                "1",
+                str(run_directory / "run-mask.nc"),
+            ]
+        )
+    )
 
-  CONFIG_FILE = f"{restart_run_directory}/config/config.js"
-  with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-      config = json.load(f)
-
-  bad_restart_from_path = config["IO"]["restart_from"]
-  assert pathlib.Path(bad_restart_from_path).exists() == False
-
-  
-
-# Further tests:
-#   --restart-run restart_from="" --> exception
-#   restart_from <path> , no cmd line flag --> success
-#
-#   restart_from <bad path> --> exception
-#
-#
+    missing_restart = run_directory / "missing-restart.nc"
+    _run_stage_expect_failure(
+        run_directory,
+        run_directory / "output-invalid-restart",
+        ["-p", "0", "-e", "0", "-s", "5", "-t", "0", "-n", "0"],
+        restart_from=missing_restart,
+    )
+    assert not missing_restart.exists()

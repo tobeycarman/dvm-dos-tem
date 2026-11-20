@@ -90,6 +90,10 @@ jobs:
         run: ./scripts/test.sh mechanical
         working-directory: source
 
+      - name: Run stage and restart integration tests
+        run: ./scripts/test.sh integration
+        working-directory: source
+
       - name: run help
         run: docker compose exec dvmdostem-dev dvmdostem --help
         working-directory: source
